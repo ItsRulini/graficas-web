@@ -1,4 +1,4 @@
-class Menu {
+export class Menu {
     constructor() {
         this.init();
         this.bindEvents();
