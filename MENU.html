@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>¡CHAOS!</title>
+
+    <!-- Responsive -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,
+    initial-scale=1.0">
+    <!-- Diseño .css -->
+    <link rel="stylesheet" href="styles/MENU.css">
+    <link href="https://fonts.cdnfonts.com/css/new-super-mario-font-u" rel="stylesheet">
+    <!-- Uso de GSAP para animaciones -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" integrity="sha512-7eHRwcbYkK4d9g/6tD/mhkf++eoTHwpNM9woBxtPUBWm67zeAfFC+HrdoE2GanKeocly/VxeLvIqwvCdk7qScg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/TextPlugin.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/SplitText.min.js"></script>
+    <!-- Fonts Awesome y google para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
+</head>
+<body>
+    <div class="main">
+        <div class="main-aux">
+        <!-- PANTALLA -->
+        <div class="game-screen">
+            <div class="game-menu">
+                <!-- MENU PRINCIPAL -->
+                <div class="gm-opt">
+                    <div class="gm-img">
+                        <img src="img/logo.png" alt="logo">
+                    </div>
+                    <div class="gmo-start-wrapper">
+                        <div class="gmo-start">
+                            <span><i class="fa-solid fa-play"></i></span>
+                            <span>START</span>
+                        </div>
+                    </div>
+                    <div class="gmo-config-wrapper" id="open-gmc">
+                        <div class="gmo-config">
+                            <span><i class="fa-solid fa-gear"></i></span>
+                            <span>SETTINGS</span>
+                        </div>
+                    </div>
+                    <div class="gmo-credits-wrapper" id="open-gmct">
+                        <div class="gmo-credits">
+                            <span>CREDITS</span>
+                        </div>
+                    </div>
+                    <a class="gmo-exit-wrapper" href="LOG.HTML">
+                        <div class="gmo-exit">
+                            <span>EXIT</span>
+                        </div>
+                    </a>
+                </div>
+                <!-- SETTINGS & PAUSE MENU -->
+                <div class="gm-config" style="display: none;" id="config-pause"> <!--fondo -->
+                    <div class="gmc-set">
+                        <div class="gmc-close" id="close-gmc"> <!--cambia aspecto si es pausa -->
+                            <div class="gmc-x">x</div>
+                        </div>
+                        <div class="gmc-resume" style="display: none;" id="resume-gmc">
+                            <div class="gmc-play"><i class="fa-solid fa-play"></i></div>
+                        </div>
+                        <div class="gmc-img">
+                            <img src="img/9.png" alt="spiral" id="spiral">
+                            <img src="img/10.png" alt="stars" id="stars">
+                            <img src="img/7.png" alt="powow" id="powow">
+                            <img src="img/8.png" alt="cinta" id="cinta">
+                            <img src="img/8.png" alt="cinta" id="cintados">
+                        </div>
+                        <div class="gmc-left">
+                            <div class="gmc-page uno">
+                            </div>
+                            <div class="gmc-page dos">
+                            </div>
+                            <div class="gmc-page tres">
+                            </div>
+                            <div class="gmc-page cuatro">
+                            </div>
+                            <div class="gmc-page cinco">
+                            </div>
+                        </div>
+                        <div class="gmc-set-aux">
+                            <div class="gmc-set-h">
+                                <img src="img/settings.png" alt="settings">
+                            </div>
+                            <div class="gmc-music-sound">
+                                <button id="music-btn"><i class="material-symbols-outlined">music_note</i></button>
+                                <button id="volume-btn"><i class="fa-solid fa-volume-high"></i></button>
+                            </div>
+                            <div class="gmc-gamemode" id="gamemode-gmc">
+                                <div class="arrow" id="prev"><i class="fa-solid fa-caret-left"></i></div>
+                                <div class="gmc-display" id="easy">EASY</div>
+                                <div class="gmc-display" id="medium">MEDIUM</div>
+                                <div class="gmc-display" id="hard">HARD</div>
+                                <div class="arrow" id="next"><i class="fa-solid fa-caret-right"></i></div>
+                            </div>
+                            <div class="gmc-reload-wrapper" style="display: none;" id="reload-gmc"> <!-- se muestra solo en el menu de pausa -->
+                                <div class="gmc-reload">
+                                    <i class="fa-solid fa-rotate-right"></i>
+                                </div>
+                            </div>
+                            <div class="gmc-btns">
+                                <div class="gmc-save-wrapper" id="save-gmc">
+                                    <div class="gmc-save">
+                                        <span><i class="fa-solid fa-floppy-disk"></i></span>
+                                        <span>SAVE</span>
+                                    </div>
+                                </div>
+                                <a class="gmc-quit-wrapper" style="display: none;" id="quit-gmc" href="LOG.HTML">
+                                    <div class="gmc-quit">
+                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    </div>
+                                </a>
+                            </div>
+                       </div>
+                    </div>
+                </div>
+                <!-- CREDITS -->
+                <div class="gm-credits" style="display: none;">
+                    <div class="gmct-cdts">
+                        <div class="gmct-close">
+                            <div class="gmct-x" id="close-gmct">x</div>
+                        </div>
+                        <div class="gmc-img">
+                            <img src="img/8.png" alt="cinta" id="cinta">
+                            <img src="img/8.png" alt="cinta" id="cintados">
+                        </div>
+                        <div class="gmc-left">
+                            <div class="gmc-page uno">
+                            </div>
+                            <div class="gmc-page dos">
+                            </div>
+                            <div class="gmc-page tres">
+                            </div>
+                            <div class="gmc-page cuatro">
+                            </div>
+                            <div class="gmc-page cinco">
+                            </div>
+                        </div>
+                        <div class="gmct-set-aux">
+                            <div class="gmct-set-h">
+                                <img src="img/credits.png" alt="credits">
+                            </div>
+                            <div class="gmct-names" aria-hidden="true">
+                                <p id="raul">Raul Alejandro <br> Garcia Gamez</p>
+                                <p id="alberto">Alberto Jesus <br> Alvarado Garza</p>
+                                <p id="danna">Danna Paola <br> Hernandez Rodriguez</p>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- BARRA DERECHA -->
+        <div class="game-display" >
+            <div class="game-user">
+                <div class="gu-banner">
+                    <!-- imagen? -->
+                </div>
+                <div class="gu-pfp">
+                    <input type="file" id="fileInput" accept="image/jpeg, image/png, image/jpg" style="display: none;">
+                    <img src="img/pfp.jpg" id="profileImage" alt="pfp" onclick="selectImage()">
+                </div>
+                <div class="game-uname">
+                    <p id="username">Username</p>
+                    <div class="game-uname-content">
+                        <button id="white"></button> 
+                        <button id="black"></button> 
+                        <button id="yellow"></button> 
+                        <button id="green"></button>
+                        <button id="blue"></button>
+                        <button id="red"></button>
+                        <button id="rainbow"></button>
+                    </div>
+                </div>
+            </div>
+            <div class="game-stats">
+                <div class="status-wrapper">
+                    <div class="status">
+                        <img src="img/STATS.png" alt="">
+                    </div>
+                </div>
+                <div class="resume">
+                    <div class="resume-img">
+                        <img src="img/1.png" alt="exclamation" id="exc">
+                        <img src="img/4.png" alt="sun" id="sun">
+                        <img src="img/5.png" alt="star" id="star">
+                        <img src="img/2.png" alt="pow" id="pow">
+                    </div>
+                    <div class="r-left">
+                        <div class="rl-page"></div>
+                        <div class="rl-page"></div>
+                        <div class="rl-page"></div>
+                        <div class="rl-page"></div>
+                        <div class="rl-page"></div>
+                    </div>
+                    <div class="rl-container">
+                        <div class="r-bscore-aux" id="aux-one">
+                            <div class="r-bscore" >
+                                <span>Best Score:</span>
+                                <span>9999</span>
+                            </div>
+                        </div>
+                        <div class="r-bscore-aux" id="aux-two">
+                            <div class="r-bscore-r" >
+                                <span><i class="fa-solid fa-clock"></i> Play Time:</span>
+                                <span>03:35</span>
+                            </div>
+                        </div>
+                        <div class="r-bscore-aux" id="aux-three">
+                            <div class="r-bscore-t" >
+                                <span>Total Wins:</span>
+                                <span>9999</span>
+                            </div>
+                        </div>
+                        <div class="r-bscore-aux" id="aux-four">
+                            <div class="r-bscore-r" >
+                                <span>Total <i class="fa-solid fa-skull"></i>:</span>
+                                <span>9999</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+    <!-- SCRIPTS.js -->
+    <script src="js/MENU.js"></script>
+</body>
