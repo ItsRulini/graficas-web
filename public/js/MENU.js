@@ -1,11 +1,15 @@
 export class Menu {
     constructor() {
+        this.isPlaying = localStorage.getItem("isPlaying") ?? true;
+
         this.init();
         this.bindEvents();
         this.GSAP();
         this.showDisplay(this.currentIndex);
         this.togglePauseMenu(false);
+        this.musicToogle(this.isPlaying); // Iniciar sin música
     }
+
 
     init() {
         console.log("Menu initialized");
@@ -50,6 +54,8 @@ export class Menu {
         this.musicBtn = document.getElementById("music-btn");
         this.volumeBtn = document.getElementById("volume-btn");
 
+        const icon = this.musicBtn.querySelector("i");
+
         // abrir/cerrar el menu de pausa con la tecla P o manualmente
         this.pauseMenu = document.getElementById("config-pause"); 
         this.settingsImg = document.querySelector(".gmc-set-h img");
@@ -77,9 +83,24 @@ export class Menu {
         // Foto de perfil
         this.profileImage = document.getElementById("profileImage");
         this.fileInput = document.getElementById("fileInput");
+
+        // Música de fondo
+        this.backgroundMusic = document.getElementById("background-music");
+        this.backgroundMusic.volume = 0.5;
     }
 
     bindEvents() {
+
+        // Iniciar juego
+        this.startGame.addEventListener("click", () => {
+            window.location.href = "SCENE.html";
+        });
+
+        // Cerrar sesión
+        this.logout.addEventListener("click", () => {
+            window.location.href = "LOG.HTML";
+        });
+
         // Efectos hover en los wrappers
         this.wrappersEffects.forEach(wrapper => {
             wrapper.addEventListener('mouseenter', () => {
@@ -179,15 +200,7 @@ export class Menu {
 
         // Cambiar color e icono del volumen y musica
         this.musicBtn.addEventListener("click", () => {
-            const icon = this.musicBtn.querySelector("i");
-            this.musicBtn.classList.toggle("active");
-            if (this.musicBtn.classList.contains("active")) {
-                icon.textContent = "music_off";
-                this.musicBtn.style.background = "rgb(255, 66, 66)";
-            } else {
-                icon.textContent = "music_note";
-                this.musicBtn.style.background = "";
-            }
+            this.musicToogle(this.isPlaying);
         });
 
         this.volumeBtn.addEventListener("click", () => {
@@ -247,6 +260,7 @@ export class Menu {
                 reader.readAsDataURL(file);
             }
         });
+        
     }
 
     GSAP() {
@@ -297,6 +311,42 @@ export class Menu {
             this.quitBtn.style.display = "none";
         }
     }
+
+    async manageMusic(play) {
+
+        if (!this.backgroundMusic) return;
+
+        if (!play) {
+            this.backgroundMusic.pause();
+        }
+        else{
+            this.backgroundMusic.play().catch((error) => {
+                console.error("Error al reproducir la música:", error);
+            });
+        }
+    }
+
+    musicToogle(play) {
+        const icon = this.musicBtn.querySelector("i");
+        //this.musicBtn.classList.toggle("active");
+        if (play) {
+            icon.textContent = "music_off";
+            this.musicBtn.style.background = "rgb(255, 66, 66)";
+
+            // Pausar música
+            this.isPlaying = false;
+        } else {
+            icon.textContent = "music_note";
+            this.musicBtn.style.background = "";
+
+            // Reanudar música
+            this.isPlaying = true;
+        }
+
+        this.manageMusic(this.isPlaying);
+    }
+
+    
 }
 
 document.addEventListener('DOMContentLoaded', () => {

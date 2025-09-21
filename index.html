@@ -22,6 +22,10 @@
 </head>
 <body>
     <div class="main">
+        <audio id="background-music" style="display: none;" loop>
+            <source src="resources/audio/music/Hi-Fi Rush OST The Rush.mp3" type="audio/mpeg">
+        </audio>
+
         <div class="main-aux">
         <!-- PANTALLA -->
         <div class="game-screen">
@@ -32,7 +36,7 @@
                         <img src="resources/img/logo.png" alt="logo">
                     </div>
                     <div class="gmo-start-wrapper">
-                        <div class="gmo-start">
+                        <div class="gmo-start" id="gmo-start">
                             <span><i class="fa-solid fa-play"></i></span>
                             <span>START</span>
                         </div>
@@ -48,11 +52,11 @@
                             <span>CREDITS</span>
                         </div>
                     </div>
-                    <a class="gmo-exit-wrapper" href="LOG.HTML">
+                    <div class="gmo-exit-wrapper" id="gmo-exit">
                         <div class="gmo-exit">
                             <span>EXIT</span>
                         </div>
-                    </a>
+                    </div>
                 </div>
                 <!-- SETTINGS & PAUSE MENU -->
                 <div class="gm-config" style="display: none;" id="config-pause"> <!--fondo -->
