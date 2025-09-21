@@ -295,7 +295,7 @@ export class Menu {
     togglePauseMenu(open) {
         if (open) {
             this.pauseMenu.style.display = "inline-flex";
-            this.settingsImg.src = "img/pause.png";
+            this.settingsImg.src = "resources/img/pause.png";
             this.resumeBtn.style.display = "inline-flex";
             this.closeBtn.style.display = "none";
             this.gameMode.style.display = "none";
@@ -303,7 +303,7 @@ export class Menu {
             this.quitBtn.style.display = "inline-flex";
         } else {
             this.pauseMenu.style.display = "none";
-            this.settingsImg.src = "img/settings.png";
+            this.settingsImg.src = "resources/img/settings.png";
             this.resumeBtn.style.display = "none";
             this.closeBtn.style.display = "inline-flex";
             this.gameMode.style.display = "inline-flex";

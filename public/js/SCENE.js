@@ -38,7 +38,7 @@ class BasicCharacterController {
     const loader = new FBXLoader();
     loader.setPath('./resources/3D/');
     loader.load('character.fbx', (fbx) => {
-      fbx.scale.setScalar(0.1);
+      fbx.scale.setScalar(0.05);
       fbx.traverse(c => {
         c.castShadow = true;
       });
@@ -105,6 +105,12 @@ class BasicCharacterController {
     }
     if (this._input._keys.backward) {
       velocity.z -= acc.z * timeInSeconds;
+
+        // Rotar 180 grados cuando se presiona la tecla 's'
+        _A.set(0, 1, 0);
+        _Q.setFromAxisAngle(_A, Math.PI); // Math.PI = 180 grados
+        _R.multiply(_Q);
+
     }
     if (this._input._keys.left) {
       _A.set(0, 1, 0);
@@ -456,22 +462,45 @@ class CharacterControllerDemo {
     controls.update();
 
 
-    const plane = new THREE.Mesh(
-        new THREE.PlaneGeometry(100, 100, 10, 10),
+    const box = new THREE.Mesh(
+        new THREE.BoxGeometry(100, 1, 100, 10, 1, 10), // Un cubo muy plano
         new THREE.MeshStandardMaterial({
-            color: 0x808080,
-          }));
-    plane.castShadow = false;
-    plane.receiveShadow = true;
-    plane.rotation.x = -Math.PI / 2;
-    this._scene.add(plane);
+            color: 0xffffff, // Color blanco
+        }));
+    box.castShadow = false;
+    box.receiveShadow = true;
+    box.position.set(0, -0.5, 0); // Posiciona el cubo para que el personaje quede encima
+    this._scene.add(box);
 
     this._mixers = [];
     this._previousRAF = null;
 
+    // Nuevas variables para el seguimiento de la cámara
+    this._cameraTarget = new THREE.Vector3();
+    this._cameraOffset = new THREE.Vector3(0, 6, -15); // Ajusta estos valores para cambiar la distancia y la altura de la cámara.
+
     this._LoadAnimatedModel();
+
     this._RAF();
   }
+
+    _UpdateCamera() {
+        if (!this._controls._target) {
+            return;
+        }
+
+        // Posición del objetivo de la cámara (el personaje)
+        this._cameraTarget.copy(this._controls._target.position);
+        this._cameraTarget.y += 5; // Ajuste de altura para que la cámara apunte a la cabeza del personaje
+
+        // Posición de la cámara detrás del personaje, con la misma rotación
+        const tempOffset = this._cameraOffset.clone();
+        tempOffset.applyQuaternion(this._controls._target.quaternion);
+        tempOffset.add(this._controls._target.position);
+
+        this._camera.position.lerp(tempOffset, 0.1); // Usa lerp para un movimiento más suave
+        this._camera.lookAt(this._cameraTarget);
+    }
 
   _LoadAnimatedModel() {
     const params = {
@@ -510,16 +539,21 @@ class CharacterControllerDemo {
   }
 
   _RAF() {
-    requestAnimationFrame((t) => {
-      if (this._previousRAF === null) {
+    this._RAF_ID = requestAnimationFrame((t) => {
+        if (this._previousRAF === null) {
+            this._previousRAF = t;
+        }
+
+        // Detener el bucle si está pausado
+        if (this._isPaused) {
+            return;
+        }
+
+        this._threejs.render(this._scene, this._camera);
+        this._Step(t - this._previousRAF);
         this._previousRAF = t;
-      }
 
-      this._RAF();
-
-      this._threejs.render(this._scene, this._camera);
-      this._Step(t - this._previousRAF);
-      this._previousRAF = t;
+        this._RAF(); // Llamada recursiva para el siguiente frame
     });
   }
 
@@ -532,6 +566,8 @@ class CharacterControllerDemo {
     if (this._controls) {
       this._controls.Update(timeElapsedS);
     }
+
+    this._UpdateCamera(); // Actualiza la posición de la cámara
   }
 }
 
