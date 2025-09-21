@@ -102,16 +102,24 @@ class BasicCharacterController {
 
     if (this._input._keys.forward) {
       velocity.z += acc.z * timeInSeconds;
+        // Restaurar la escala en Z cuando no se presiona 'w'
+        controlObject.scale.z = 0.05; // Si originalmente es 0.05
     }
     if (this._input._keys.backward) {
       velocity.z -= acc.z * timeInSeconds;
 
-        // Rotar 180 grados cuando se presiona la tecla 's'
-        _A.set(0, 1, 0);
-        _Q.setFromAxisAngle(_A, Math.PI); // Math.PI = 180 grados
-        _R.multiply(_Q);
+        // Rotar 360 grados cuando se presiona la tecla 's'
+        // _A.set(0, 1, 0);
+        // _Q.setFromAxisAngle(_A, Math.PI * 2); // Math.PI = 180 grados
+        // _R.multiply(_Q);
 
-    }
+         // Mirroring: invertir la escala en Z
+        controlObject.scale.z = -0.05; // Si originalmente es 0.05
+    } 
+    // else {
+    //      // Restaurar la escala en Z cuando no se presiona 's'
+    //      controlObject.scale.z = 0.05; // Si originalmente es 0.05
+    // }
     if (this._input._keys.left) {
       _A.set(0, 1, 0);
       _Q.setFromAxisAngle(_A, 4.0 * Math.PI * timeInSeconds * this._acceleration.y);
@@ -147,6 +155,7 @@ class BasicCharacterController {
     if (this._mixer) {
       this._mixer.update(timeInSeconds);
     }
+
   }
 };
 
@@ -456,10 +465,10 @@ class CharacterControllerDemo {
     light = new THREE.AmbientLight(0xFFFFFF, 0.25);
     this._scene.add(light);
 
-    const controls = new OrbitControls(
-      this._camera, this._threejs.domElement);
-    controls.target.set(0, 10, 0);
-    controls.update();
+    // const controls = new OrbitControls(
+    //   this._camera, this._threejs.domElement);
+    // controls.target.set(0, 10, 0);
+    // controls.update();
 
 
     const box = new THREE.Mesh(
@@ -470,7 +479,14 @@ class CharacterControllerDemo {
     box.castShadow = false;
     box.receiveShadow = true;
     box.position.set(0, -0.5, 0); // Posiciona el cubo para que el personaje quede encima
-    this._scene.add(box);
+    // this._scene.add(box);
+
+    // Agregando un escenario
+
+    const ground = this._Scene() ? this._Scene() : box;
+
+    this._scene.add(ground);
+
 
     this._mixers = [];
     this._previousRAF = null;
@@ -483,6 +499,39 @@ class CharacterControllerDemo {
 
     this._RAF();
   }
+
+   _Scene(){
+        const textureLoader = new THREE.TextureLoader();
+
+        // Textura base
+        const texture1 = textureLoader.load('./resources/textures/nieve.jpg');
+        texture1.wrapS = THREE.RepeatWrapping;
+        texture1.wrapT = THREE.RepeatWrapping;
+        texture1.repeat.set(10, 10);
+
+        // Mapa de alturas (grises)
+        const heightMap = textureLoader.load('./resources/textures/heightmap.jpg');
+
+        // Material con mapa de desplazamiento
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            map: texture1, // textura base
+            displacementMap: heightMap,
+            displacementScale: 30, // Ajusta la altura del relieve
+        });
+
+        // Plano para el terreno
+        const ground = new THREE.Mesh(
+            new THREE.PlaneGeometry(500, 500, 256, 256), // Más subdivisiones = más detalle
+            groundMaterial
+        );
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -0.5;
+        ground.receiveShadow = true;
+
+        return ground;
+   }
+
+
 
     _UpdateCamera() {
         if (!this._controls._target) {
