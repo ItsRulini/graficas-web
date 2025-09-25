@@ -31,6 +31,9 @@ class BasicCharacterController {
     this._stateMachine = new CharacterFSM(
         new BasicCharacterControllerProxy(this._animations));
 
+    // Variable para almacenar la posición anterior
+    this._previousPosition = new THREE.Vector3(0, 0, 0);
+
     this._LoadModels();
   }
 
@@ -45,6 +48,9 @@ class BasicCharacterController {
 
       this._target = fbx;
       this._params.scene.add(this._target);
+
+      // Inicializar la posición anterior cuando se carga el modelo
+      this._previousPosition.copy(this._target.position);
 
       this._mixer = new THREE.AnimationMixer(this._target);
 
@@ -69,6 +75,61 @@ class BasicCharacterController {
       loader.load('running.fbx', (a) => { _OnLoad('run', a); });
       loader.load('Idle.fbx', (a) => { _OnLoad('idle', a); });
     });
+  }
+
+  // Método para obtener la posición actual del personaje
+  GetCharacterPosition() {
+    if (!this._target) {
+      return new THREE.Vector3(0, 0, 0); // Posición por defecto si no hay personaje
+    }
+    return this._target.position.clone(); // Retorna una copia de la posición
+  }
+
+  // Método para obtener la rotación actual del personaje
+  GetCharacterRotation() {
+    if (!this._target) {
+      return new THREE.Quaternion(); // Rotación por defecto si no hay personaje
+    }
+    return this._target.quaternion.clone(); // Retorna una copia de la rotación
+  }
+
+  // Método para obtener información completa del personaje
+  GetCharacterInfo() {
+    if (!this._target) {
+      return {
+        position: new THREE.Vector3(0, 0, 0),
+        rotation: new THREE.Quaternion(),
+        scale: new THREE.Vector3(1, 1, 1),
+        exists: false
+      };
+    }
+    
+    return {
+      position: this._target.position.clone(),
+      rotation: this._target.quaternion.clone(),
+      scale: this._target.scale.clone(),
+      exists: true
+    };
+  }
+
+  // Método para verificar si el personaje se ha movido
+  HasCharacterMoved() {
+    if (!this._target) {
+      return false;
+    }
+    
+    const threshold = 0.001; // Umbral mínimo de movimiento
+    const currentPosition = this._target.position;
+    const distance = this._previousPosition.distanceTo(currentPosition);
+    
+    return distance > threshold;
+  }
+
+  // Método para actualizar la posición anterior
+  UpdatePreviousPosition() {
+    if (this._target) {
+      this._previousPosition.copy(this._target.position);
+    }
   }
 
   Update(timeInSeconds) {
@@ -155,7 +216,6 @@ class BasicCharacterController {
     if (this._mixer) {
       this._mixer.update(timeInSeconds);
     }
-
   }
 };
 
@@ -465,40 +525,23 @@ class CharacterControllerDemo {
     light = new THREE.AmbientLight(0xFFFFFF, 0.25);
     this._scene.add(light);
 
-    // const controls = new OrbitControls(
-    //   this._camera, this._threejs.domElement);
-    // controls.target.set(0, 10, 0);
-    // controls.update();
-
-
-    const box = new THREE.Mesh(
-        new THREE.BoxGeometry(100, 1, 100, 10, 1, 10), // Un cubo muy plano
-        new THREE.MeshStandardMaterial({
-            color: 0xffffff, // Color blanco
-        }));
-    box.castShadow = false;
-    box.receiveShadow = true;
-    box.position.set(0, -0.5, 0); // Posiciona el cubo para que el personaje quede encima
-    // this._scene.add(box);
-
     // Agregando un escenario
-
-    const ground = this._Scene() ? this._Scene() : box;
-
-    this._scene.add(ground);
+    this._CreateTerrain();
 
 
     this._mixers = [];
     this._previousRAF = null;
 
-    // Nuevas variables para el seguimiento de la cámara
+    // Nuevas variables para el seguimiento de la cÃ¡mara
     this._cameraTarget = new THREE.Vector3();
-    this._cameraOffset = new THREE.Vector3(0, 6, -15); // Ajusta estos valores para cambiar la distancia y la altura de la cámara.
+    this._cameraOffset = new THREE.Vector3(0, 6, -15); // Ajusta estos valores para cambiar la distancia y la altura de la cÃ¡mara.
 
     this._LoadAnimatedModel();
 
     this._RAF();
   }
+
+    
 
    _Scene(){
         const textureLoader = new THREE.TextureLoader();
@@ -521,7 +564,7 @@ class CharacterControllerDemo {
 
         // Plano para el terreno
         const ground = new THREE.Mesh(
-            new THREE.PlaneGeometry(500, 500, 256, 256), // Más subdivisiones = más detalle
+            new THREE.PlaneGeometry(500, 500, 256, 256), // MÃ¡s subdivisiones = mÃ¡s detalle
             groundMaterial
         );
         ground.rotation.x = -Math.PI / 2;
@@ -531,6 +574,173 @@ class CharacterControllerDemo {
         return ground;
    }
 
+   _CreateTerrain() {
+    const textureLoader = new THREE.TextureLoader();
+
+    // Crear un material simple como respaldo
+    const fallbackMaterial = new THREE.MeshStandardMaterial({
+      color: 0x4a5d23, // Verde tierra
+      roughness: 0.8,
+      metalness: 0.1
+    });
+
+    // GeometrÃ­a del terreno con mÃ¡s subdivisiones para el heightmap
+    // 200x200 unidades, 128x128 subdivisiones
+    this._terrainGeometry = new THREE.PlaneGeometry(200*5, 200*5, 200*5, 200*5);
+    
+    // Crear el terreno con material simple por defecto
+    this._terrain = new THREE.Mesh(this._terrainGeometry, fallbackMaterial);
+    this._terrain.rotation.x = -Math.PI / 2;
+    this._terrain.position.y = -2;
+    this._terrain.receiveShadow = true;
+    this._terrain.castShadow = false;
+    
+    this._scene.add(this._terrain);
+
+    // Intentar cargar texturas avanzadas
+    const onTextureLoad = () => {
+      console.log('Texturas cargadas correctamente');
+    };
+
+    const onTextureError = (err) => {
+      console.log('Error cargando texturas, usando material simple:', err);
+    };
+
+    // Textura base con repeticiÃ³n
+    const grassTexture = textureLoader.load(
+      './resources/textures/nieve.jpg',
+      onTextureLoad,
+      undefined,
+      onTextureError
+    );
+    grassTexture.wrapS = THREE.RepeatWrapping;
+    grassTexture.wrapT = THREE.RepeatWrapping;
+    grassTexture.repeat.set(8, 8);
+
+    // Textura secundaria
+    const rockTexture = textureLoader.load(
+      './resources/textures/water.jpg',
+      undefined,
+      undefined,
+      onTextureError
+    );
+    rockTexture.wrapS = THREE.RepeatWrapping;
+    rockTexture.wrapT = THREE.RepeatWrapping;
+    rockTexture.repeat.set(4, 4);
+
+    // Mapa de alturas
+    const heightMap = textureLoader.load(
+      './resources/textures/heightmap.jpg',
+      (texture) => {
+        // Cuando se carga el heightmap, aplicar desplazamiento
+        this._ApplyHeightMap(texture);
+        onTextureLoad();
+      },
+      undefined,
+      onTextureError
+    );
+
+    // Crear shader material para multitextura
+    const terrainMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        grassTexture: { value: grassTexture },
+        rockTexture: { value: rockTexture },
+        heightMap: { value: heightMap },
+        lightColor: { value: new THREE.Color(0xffffff) },
+        lightDirection: { value: new THREE.Vector3(-1, 1, 1).normalize() }
+      },
+      vertexShader: `
+        uniform sampler2D heightMap;
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        
+        void main() {
+          vUv = uv;
+          
+          // Obtener altura del heightmap
+          float height = texture2D(heightMap, uv).r;
+          vec3 newPosition = position;
+          newPosition.z += height * 20.0; // Escala de altura
+          
+          vPosition = newPosition;
+          vNormal = normal;
+          
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D grassTexture;
+        uniform sampler2D rockTexture;
+        uniform sampler2D heightMap;
+        uniform vec3 lightColor;
+        uniform vec3 lightDirection;
+        
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+        
+        void main() {
+          // Obtener colores de las texturas
+          vec4 grassColor = texture2D(grassTexture, vUv);
+          vec4 rockColor = texture2D(rockTexture, vUv);
+          
+          // Usar altura para mezclar texturas
+          float height = texture2D(heightMap, vUv).r;
+          vec4 finalColor = mix(grassColor, rockColor, height);
+          
+          // IluminaciÃ³n simple
+          float lightIntensity = max(dot(normalize(vNormal), normalize(lightDirection)), 0.3);
+          finalColor.rgb *= lightIntensity * lightColor;
+          
+          gl_FragColor = finalColor;
+        }
+      `
+    });
+
+    // Intentar aplicar el material avanzado, si falla mantener el simple
+    try {
+      this._terrain.material = terrainMaterial;
+    } catch (error) {
+      console.log('Error aplicando shader material, usando material simple');
+    }
+  }
+
+  _ApplyHeightMap(heightTexture) {
+    if (!this._terrainGeometry || !heightTexture.image) return;
+
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = heightTexture.image.width;
+    canvas.height = heightTexture.image.height;
+    
+    context.drawImage(heightTexture.image, 0, 0);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    
+    const positions = this._terrainGeometry.attributes.position.array;
+    const width = this._terrainGeometry.parameters.widthSegments + 1;
+    const height = this._terrainGeometry.parameters.heightSegments + 1;
+    
+    for (let i = 0; i < height; i++) {
+      for (let j = 0; j < width; j++) {
+        const index = (i * width + j) * 3;
+        
+        // Obtener pixel correspondiente del heightmap
+        const pixelX = Math.floor((j / (width - 1)) * (canvas.width - 1));
+        const pixelY = Math.floor((i / (height - 1)) * (canvas.height - 1));
+        const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
+        
+        // Usar el canal rojo como altura
+        const heightValue = imageData.data[pixelIndex] / 255.0;
+        
+        // Aplicar desplazamiento en Y (que es Z en el plano rotado)
+        positions[index + 2] = heightValue * 15; // Escala de altura
+      }
+    }
+    
+    this._terrainGeometry.attributes.position.needsUpdate = true;
+    this._terrainGeometry.computeVertexNormals();
+  }
 
 
     _UpdateCamera() {
@@ -538,16 +748,16 @@ class CharacterControllerDemo {
             return;
         }
 
-        // Posición del objetivo de la cámara (el personaje)
+        // PosiciÃ³n del objetivo de la cÃ¡mara (el personaje)
         this._cameraTarget.copy(this._controls._target.position);
-        this._cameraTarget.y += 5; // Ajuste de altura para que la cámara apunte a la cabeza del personaje
+        this._cameraTarget.y += 5; // Ajuste de altura para que la cÃ¡mara apunte a la cabeza del personaje
 
-        // Posición de la cámara detrás del personaje, con la misma rotación
+        // PosiciÃ³n de la cÃ¡mara detrÃ¡s del personaje, con la misma rotaciÃ³n
         const tempOffset = this._cameraOffset.clone();
         tempOffset.applyQuaternion(this._controls._target.quaternion);
         tempOffset.add(this._controls._target.position);
 
-        this._camera.position.lerp(tempOffset, 0.1); // Usa lerp para un movimiento más suave
+        this._camera.position.lerp(tempOffset, 0.1); // Usa lerp para un movimiento mÃ¡s suave
         this._camera.lookAt(this._cameraTarget);
     }
 
@@ -593,7 +803,7 @@ class CharacterControllerDemo {
             this._previousRAF = t;
         }
 
-        // Detener el bucle si está pausado
+        // Detener el bucle si estÃ¡ pausado
         if (this._isPaused) {
             return;
         }
@@ -614,9 +824,27 @@ class CharacterControllerDemo {
 
     if (this._controls) {
       this._controls.Update(timeElapsedS);
+      
+      // Solo mostrar información si el personaje se ha movido
+      if (this._controls.HasCharacterMoved()) {
+        // Obtener solo la posición
+        const position = this._controls.GetCharacterPosition();
+        console.log(`Personaje en: x=${position.x.toFixed(3)}, y=${position.y.toFixed(3)}, z=${position.z.toFixed(3)}`);
+        
+        // Obtener información completa
+        const info = this._controls.GetCharacterInfo();
+        if (info.exists) {
+            console.log('Posición:', info.position);
+            console.log('Rotación:', info.rotation);
+            console.log('Escala:', info.scale);
+        }
+        
+        // Actualizar la posición anterior para la próxima comparación
+        this._controls.UpdatePreviousPosition();
+      }
     }
 
-    this._UpdateCamera(); // Actualiza la posición de la cámara
+    this._UpdateCamera(); // Actualiza la posiciÃ³n de la cÃ¡mara
   }
 }
 
