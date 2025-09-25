@@ -14,8 +14,9 @@
     --wcolor: rgb(226, 221, 213);
 
     --cred:rgb(255, 66, 66);
-    --cgreen: rgb(194, 236, 139);
+    --cgreen: rgb(175, 228, 106);
     --cyellow: #ffd900;
+    --corange: #ffa600;
 
     --paper: rgb(230, 226, 215);
 }
@@ -57,18 +58,23 @@ body{
 /*      PANTALLA DEL JUEGO        */
 .game-screen {
     background-color: var(--wcolor);
-    flex: 1 1 auto;          /* crece para ocupar el espacio disponible */
-    max-width: calc(100% - 400px - 5px); /* ancho máximo considerando la barra lateral y el gap */
-    max-height: 100dvh;      /* nunca sobrepasa la altura del viewport */
-    aspect-ratio: 16 / 9;    /* mantiene proporción */
-    border-radius: 10px;
+
+    /* Se ajusta al tamaño máximo disponible manteniendo el aspecto */
+    width: 100dvw;
+    height: auto;
+    aspect-ratio: 16 / 9;
+
+    max-height: 100dvh;
+    max-width: 100dvw;
 
     display: flex;
     justify-content: center;
     align-items: center;
 
-    border: 4px solid;
-    border-color: var(--border-c);
+    /* border-radius: 10px; */
+    border: 4px solid var(--border-c);
+
+    margin: auto; /* centra en el viewport cuando sobra espacio */
 }
 .game-menu{
     background: url('../../resources/img/bg.png') no-repeat center center;
@@ -81,8 +87,27 @@ body{
     flex-direction: column;
     justify-content: center;
     position: relative;
-    border-radius: 10px;
 }
+/* MOSTRAR BARRA DERECHA DEL JUGADOR */
+.gm-btn-display{
+    background-color: white;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+
+    width: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    aspect-ratio: 1/1;
+    font-size: clamp(6px, calc(6px + (16 - 6) * ((100vw - 360px) / (1500 - 360))), 16px);
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border: none;
+    cursor: pointer;
+}
+
 .gm-opt{
     width: 35%;
     flex: 1;
@@ -237,7 +262,8 @@ body{
 /*      CONFIG      */
 .gm-config, /*FONDOS PARA SETTINGS, CREDITS, PAUSE*/
 .gm-credits,
-.gm-pause{
+.gm-pause,
+.gm-start{
     background-color: rgba(0, 0, 0, 0.3);
     position: absolute;
     width: 100%;
@@ -246,6 +272,9 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
+}
+.gm-start{
+    flex-direction: column;
 }
 .gmc-set,
 .gmct-cdts,
@@ -616,12 +645,12 @@ body{
 .gmc-music-sound button{
     cursor: pointer;
 }
-.gmc-display {
+/* .gmc-display {
   display: none;
 }
 .gmc-display.active {
   display: block;
-}
+} */
 
 /*   CREDITOS    */
 .gmct-names{
@@ -632,7 +661,7 @@ body{
     gap: clamp(5px, calc(5px + (25 - 5) * ((100vw - 360px) / (1200 - 360))), 25px);
 }
 .gmct-names p{
-    border-bottom: clamp(1px, calc(1px + (2 - 1) * ((100vw - 360px) / (1200 - 360))), 2px) solid black;
+    /* border-bottom: clamp(1px, calc(1px + (2 - 1) * ((100vw - 360px) / (1200 - 360))), 2px) solid black; */
     padding: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1200 - 360))), 10px);
 
     transition: all .3s ease;
@@ -651,201 +680,45 @@ body{
 
 /*      USUARIO     */
 .game-display{
-    background-color: var(--wcolor);
-    border: 4px solid;
+    border: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid;
     border-color: var(--border-c);
     
-    flex: 0 0 400px;      /* ancho fijo de la barra lateral */
+    /*height: auto; /*crece con el contenido*/
+    /* width: 30%; */
     display: flex;
-    flex-direction: column;
-    border-radius: 10px;
-}
-.game-user {
-    position: relative; /* referencia para posicionar el pfp */
-    text-align: center;
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
 
-    background-color: transparent;
-}
-.gu-banner{
-    height: 200px;
-
-    background-color: white;
-    background-size: cover;
-    padding: 5px;
-    border-radius: 10px 10px 0 0;
-}
-.gu-pfp{
-    width: 120px;              /* tamaño fijo */
-    aspect-ratio: 1/1;
-    margin-top: -70px;         /* subimos para sobresalir del banner */
-    z-index: 1;
-    border-radius: 50%;
-    background-color: white;
-    padding: 5px;
-    display: inline-block;     /* para centrar */
-    cursor: pointer;
-}
-.gu-pfp img{
-    width: 100%;
-    aspect-ratio: 1/1;
-    object-fit: cover;
-    border-radius: 50%;
-
-    display: block; /*respeta el tamaño de la imagen, sin espacios*/
-    transition: all .3s ease;
-}
-.game-uname{
-    text-align: center;
-    font-size: 2rem;
-
-    position: relative;
-    cursor: pointer;
-}
-.game-uname-content {
+    position: absolute;
+    top: 10px;
+    right: 10px;
     display: none;
+
+    box-shadow: 
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+}
+.game-display.active { /*para toggle*/
+    display: inline-flex;
+}
+#paw{
     position: absolute;
-    background-color: white;
-    top: 100%; /* justo debajo del nombre */
-    left: 50%; /* al 50% del contenedor padre */
-    transform: translateX(-50%); /* lo centra horizontalmente */
-
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
-    padding: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1200 - 360))), 5px);
-    
-}
-.game-uname-content button{
-    width: 15%;
-    aspect-ratio: 1/1;
-    border-radius: 100%;
-}
-#black{
-    background-color: black;
-}
-#white{
-    background-color: white;
-}
-#yellow{
-    background-color: var(--cyellow);
-}
-#green{
-    background-color: var(--cgreen);
-}
-#blue{
-    background-color: var(--fcolor);
-}
-#red{
-    background-color: var(--cred);
-}
-#rainbow{
-    background: linear-gradient(to right, red, yellow, green, blue, purple);
-}
-@keyframes rainbow{
-    0%{color: red;}
-    25%{color: yellow;}
-    50%{color: green;}
-    75%{color: blue;}
-    100%{color: purple;}
-}
-.game-uname:hover .game-uname-content {
-    display: inline-block;
-}
-
-.game-stats{
-    padding: 10px;
-
-    display: flex;
-    flex-direction: column; /* hijos en vertical */
-    flex: 1; /* ocupa el resto de su contenedor padre */
-    position: relative;
-
-    background-color: transparent;
-}
-.status-wrapper{
-    background-color: black;
-    clip-path: polygon(
-        5% 0%, 95% 15%, 100% 20%, 97% 90%,
-        70% 120%, 10% 85%, 3% 80%, 0% 20%
-    );
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    height: 120px;
-}
-.status{
-    background-color: white;
-    clip-path: polygon(
-        5% 0%, 95% 15%, 100% 20%, 97% 90%,
-        70% 120%, 10% 85%, 3% 80%, 0% 20%
-    );
-
-    width: 98%;
-    height: 93%;
-
-    font-size: 2rem;
-    text-align: center;
-    padding: 10px;
-    font-weight: bolder;
-
-    background-size: cover;
-}
-.status img{
+    bottom: 0;
+    right: 10%;
+    width: clamp(50px, calc(50px + (200 - 50) * ((100vw - 360px) / (1500 - 360))), 200px);
     object-fit: cover;
-    width: 100%;
-    height: 100%;
+    opacity: .2;
 }
-.resume{
-    background-color: white;
-    display: flex;
-    flex: 1;
-
-    position: relative;
-    border: 4px solid var(--border-c);
-    border-radius: 8px;
+.gd-cw{
+    padding: clamp(6px, calc(6px + (20 - 6) * ((100vw - 360px) / (1500 - 360))), 20px);
+    background-color: var(--cred);
+    border-radius: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px)
+               0
+               0
+               clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px);
 }
-.resume-img img{
-    position: absolute;
-    width: 30%;
-}
-#exc{
-    left: 10px;
-    top: -50px;
-    z-index: 5;
-}
-#sun{
-    right: 10px;
-    top: 50px;
-}
-#star{
-    left: 30px;
-    bottom: 10px;
-}
-#pow{
-    right: 10px;
-    bottom: 90px;
-    z-index: 5;
-}
-
-.r-left{
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    gap: 30px;
-    padding:  0 15px 0px 10px;
-
-    border-right: 2px solid red;
-}
-.rl-page{
-    background-color: rgb(209, 209, 209);
-    border: 3px solid black;
-    width: 25px;
-    aspect-ratio: 1/1;
-    border-radius: 100%;
-}
-.rl-container{
+.gd-aux{
     background: repeating-linear-gradient(
         180deg,       
         var(--fcolor) 0,    
@@ -853,86 +726,782 @@ body{
         transparent 2px,
         transparent 40px /* espacio entre líneas */
     );
-    flex: 1;
-    padding: 10px;
 
+}
+.gd-aux span{
+    font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
+}
+.gd-info{
+    display: inline-flex;
+    align-items: center;
+    gap: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+    background-color: white;
+    height: 100%;
+    padding: clamp(6px, calc(6px + (30 - 6) * ((100vw - 360px) / (1500 - 360))), 30px)
+             clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+}
+.gd-circle{
+    position: absolute;
+    top: 5%;
+    left: 50%;
+
+    border-radius: 100%;
+    width: clamp(8px, calc(8px + (30 - 8) * ((100vw - 360px) / (1500 - 360))), 30px);
+    aspect-ratio: 1/1;
+    background-color: rgb(052, 141, 232);
+    border: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid var(--border-c);
+}
+.gdd-img{
+    position: relative;
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    width: clamp(50px, calc(50px + (150 - 50) * ((100vw - 360px) / (1500 - 360))), 150px);
+    gap: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px);
+    aspect-ratio: 1/1;
+}
+#playercard{
+    font-size: clamp(6px, calc(6px + (16 - 6) * ((100vw - 360px) / (1500 - 360))), 16px);
+}
+.barcode{
     display: flex;
     justify-content: center;
     align-items: center;
-    flex-direction: column;
-    gap: 20px;
-    
+    font-size: clamp(8px, calc(8px + (26 - 8) * ((100vw - 360px) / (1500 - 360))), 26px);
 }
-.r-bscore-aux{
+#avatar{
+    display: block;
     width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
+    padding: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+    background-color: transparent;
+}
+#border{
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: block;
+    width: 100%;
+    aspect-ratio: 1/1;
+}
+.gdd-input{
     display: flex;
+    flex-direction: column;
+    gap: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
 }
-#aux-one{
+#idspan{
+    text-align: end;
+}
+.gi{
+    padding: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px)
+             clamp(6px, calc(6px + (15 - 6) * ((100vw - 360px) / (1500 - 360))), 15px);
+
+    gap: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+    display: flex;
     justify-content: start;
+    align-items: center;
 }
-#aux-two{
-    justify-content: center;
+.gi.player{
+    background-color: var(--cred);
 }
-#aux-three{
-    justify-content: start;
+.gi.name{
+    border-bottom: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid var(--border-c);
 }
-#aux-four{
-    justify-content: end;
+.gi-aux{
+    display: flex;
+    gap: clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+    border-bottom: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid var(--border-c);
 }
 
-.r-bscore,
+/*    CREDITS     */
 #danna{
     background-color: var(--cyellow);
     transform: rotate(-2deg);
     z-index: 6;
 }
-.r-bscore-r, 
 #raul{
     background-color: var(--cgreen);
     transform: rotate(2deg);
     z-index: 6;
 }
-.r-bscore-t, 
 #alberto{
     background-color: var(--cred);
     transform: rotate(2deg);
     z-index: 6;
 }
-.r-bscore,
-.r-bscore-r,
-.r-bscore-t{
-    border-bottom: 2px solid black;
-    font-size: 1.5rem;
-    
-    flex: 0 0 auto;
-    padding: 10px;
-    transition: all .3s ease;
+
+#star-g{
+    width: clamp(60px, calc(60px + (190 - 60) * ((100vw - 360px) / (1500 - 360))), 190px);
+    top: 0%;
+    right: 0%;
+    transform: translate(20%, 15%) rotate(10deg);
+    position: absolute;
+}
+#star-gd{
+    width: clamp(60px, calc(60px + (190 - 60) * ((100vw - 360px) / (1500 - 360))), 190px);
+    bottom: 50%;
+    left: 0%;
+    transform: translate(-50%, 70%) rotate(-5deg);
+    position: absolute;
+    z-index: 7;
+}
+#ocho-g{
+    width: clamp(60px, calc(60px + (300 - 60) * ((100vw - 360px) / (1500 - 360))), 300px);
+    top: 0;
+    left: 50;
+    transform: translate(0, -50%);
+    position: absolute;
+}
+#nueve-g{
+    width: clamp(40px, calc(40px + (180 - 40) * ((100vw - 360px) / (1500 - 360))), 180px);
+    top: 15%;
+    left: 0;
+    transform: translate(10%, -50%);
+    position: absolute;
+}
+#once-g{
+    width: clamp(60px, calc(60px + (380 - 60) * ((100vw - 360px) / (1500 - 360))), 380px);
+    top: 18%;
+    right: 50%;
+    transform: translate(50%, -50%);
+    position: absolute;
 }
 
-/*  HOVER   */
-.r-bscore:hover,
-.r-bscore-r:hover,
-.r-bscore-t:hover{
-    transform: scale(1.5);
+
+.gms-aux{
+    /* background-color: pink; */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+/*creacion de partida*/
+.gms-st{
+    background-color: var(--wcolor);
+    width: clamp(200px, calc(200px + (1000 - 200) * ((100vw - 360px) / (1500 - 360))), 1000px);;
+
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+
+    padding: clamp(5px, calc(5px + (20 - 5) * ((100vw - 360px) / (1500 - 360))), 20px);
+    gap: clamp(5px, calc(5px + (20 - 5) * ((100vw - 360px) / (1500 - 360))), 20px);
+    border: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
+    border-radius: 0px 0px 10px 10px;
+}
+.gms-stf{
+    background-color: var(--wcolor);;
+    height: clamp(10px, calc(10px + (50 - 10) * ((100vw - 360px) / (1500 - 360))), 50px);
+    width: 50%;
+    border-radius: 10px 10px 0px 0px;
+    /* bordes */
+    border-left: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
+    border-right: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
+    border-top: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
+
+    border-bottom: none;
+}
+.gms-back,
+.gml-back{
+    position: absolute;
+    top: 0; /* fijo al borde superior del contenedor */
+    right: 0%;
+    transform: translate(20%, -50%); /* lo sube justo por encima */
+    background-color: var(--border-c);
+    clip-path: polygon(
+        50% 0%,  
+        100% 25%,
+        100% 75%, 
+        50% 100%,
+        0% 75%,  
+        0% 25%   
+    );
+    font-size: clamp(12px, calc(12px + (40 - 12) * ((100vw - 360px) / (1200 - 360))), 40px);
+    width: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);
+    aspect-ratio: 1/1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: transform .3s ease;
+}
+.gms-x,
+.gml-x{
+    width: 85%;
+    height: 85%;
+    background-color: var(--cred);
+    color: white;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    clip-path: polygon(
+        50% 0%,  
+        100% 25%,
+        100% 75%, 
+        50% 100%,
+        0% 75%,   
+        0% 25%  
+    );
+}
+/* .gms-title{
+    background-color: white;
+    border-radius: 10px;
+} */
+.gms-title p{
+    font-size: clamp(10px, calc(10px + (32 - 10) * ((100vw - 360px) / (1200 - 360))), 32px);
+}
+.gms-title img{
+    width: 50%;
+}
+.gms-wrap{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10%;
+}
+.gms-create,
+.gms-join{
+    box-shadow: 
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+    background-color: white;
+    width: 40%;
+    height: clamp(80px, calc(80px + (400 - 80) * ((100vw - 360px) / (1500 - 360))), 400px);
+
+    border-radius: clamp(5px, calc(5px + (30 - 5) * ((100vw - 360px) / (1200 - 360))), 30px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;  
     
-    transform-origin: right center;
+    transition: transform  .3s ease;  
+}
+.gms-create:hover,
+.gms-join:hover{
+    cursor: pointer;
+    transform: scale(1.1);
+    z-index: 10;
+}
+.gmsc-bg.uno{
+    background-color: var(--cgreen);
+}
+.gmsc-bg.dos{
+    background-color: var(--cyellow);;
+}
+.gmsc-bg{
+    position: relative;
+    width: 94%;
+    height: 94%;
+    border-radius: clamp(5px, calc(5px + (25 - 5) * ((100vw - 360px) / (1200 - 360))), 25px);
+
+    background-image: radial-gradient(
+        rgba(255, 255, 255, 0.144) 9px,
+        transparent 6px
+    );
+    background-size: 30px 30px;
+    font-size: clamp(10px, calc(10px + (32 - 10) * ((100vw - 360px) / (1200 - 360))), 32px);
+    padding: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1200 - 360))), 10px);
+    
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: clamp(10px, calc(10px + (50 - 10) * ((100vw - 360px) / (1200 - 360))), 50px);
+}
+.create-i{
+    clip-path: polygon(
+        30% 0%,   /* arriba, lado corto */
+        70% 0%,   /* arriba, lado corto */
+        100% 30%, /* esquina superior derecha */
+        100% 70%, /* esquina inferior derecha */
+        70% 100%, /* abajo, lado corto */
+        30% 100%, /* abajo, lado corto */
+        0% 70%,   /* esquina inferior izquierda */
+        0% 30%    /* esquina superior izquierda */
+    );
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.create-i{
+    background-color: white;
+    aspect-ratio: 1/1;
+    width: 35%;
+
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform: translate(-20%, -50%) rotate(-15deg);
+}
+.ci.uno{
+    background-color: var(--cgreen);
+}
+.ci.dos{
+    background-color: var(--cyellow);
+}
+.ci{
+    width: 85%;
+    height: 85%;
+    border-radius: 100%;
+    color: white;
+    font-size: clamp(10px, calc(10px + (50 - 10) * ((100vw - 360px) / (1200 - 360))), 50px);
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
+.create-icons{
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+    gap: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1200 - 360))), 5px);
+}
+.create-wrapper {
+    position: absolute;
+    bottom: 5%;     /* mismo bottom que el hijo */
+    left: -5%;      /* mismo left que el hijo */
+    height: clamp(20px, calc(20px + (90 - 20) * ((100vw - 360px) / (1500 - 360))), 90px);;
+    width: clamp(80px, calc(80px + (390 - 80) * ((100vw - 360px) / (1500 - 360))), 390px);;
+
+    /* forma */
+    clip-path: polygon(
+        0 0,
+        100% 0,
+        93% 50%,
+        100% 100%,
+        0 100%
+    );
+
+    background-color: rgba(0, 0, 0, 0.5); /* sombra negra */
+    z-index: 4; /* debajo del .create-g */
+    border: 20px;
+}
+.create-g.uno{
+    background: repeating-linear-gradient(
+        45deg,
+        rgb(167, 226, 90),
+        rgb(167, 226, 90) 20px,
+        rgb(191, 241, 125) 20px,
+        rgb(191, 241, 125) 40px
+    );
+}
+.create-g.dos{
+    background: repeating-linear-gradient(
+        45deg,
+        rgb(248, 194, 15),
+        rgb(248, 194, 15) 20px,
+        rgb(252, 222, 53) 20px,
+        rgb(252, 222, 53) 40px
+    );
+}
+.create-g {
+    position: absolute;
+    left: -6%;
+    bottom: 7%;
+    height: clamp(20px, calc(20px + (90 - 20) * ((100vw - 360px) / (1500 - 360))), 90px);;
+    width: clamp(80px, calc(80px + (390 - 80) * ((100vw - 360px) / (1500 - 360))), 390px);;
+    z-index: 5;
+
+    clip-path: polygon(
+        0 0,
+        100% 0,
+        93% 50%,
+        100% 100%,
+        0 100%
+    );
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+}
+#i-plus{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: clamp(25px, calc(25px + (96 - 25) * ((100vw - 360px) / (1200 - 360))), 96px);
+}
+#imggp{
+    position: absolute;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%); /*                         breakpoint donde empieza a hacerse chica la pantalla/ medida minima de la pantalla: 360*/
+    width: clamp(55px, calc(55px + (200 - 55) * ((100vw - 360px) / (1500 - 360))), 200px);;
+}
+
+/*      CREATE LOBBY        */
+.gmsc-lobby{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+}
+.lobby-title{
+    text-align: start;
+}
+.lobby-title img{
+    width: 50%;
+}
+.lobby-aux{
+    width: 100%;
+    display: flex;
+    gap: 2%;
+
+    position: relative;
+}
+.lobby-imgs{
+    
+    
+}
+.star.uno{
+    position: absolute;
+    z-index: 5;
+    width: clamp(20px, calc(20px + (120 - 20) * ((100vw - 360px) / (1500 - 360))), 120px);
+    top: 0;
+    left: -5%;
+}
+.star.dos{
+    position: absolute;
+    z-index: 5;
+    width: clamp(20px, calc(20px + (105 - 20) * ((100vw - 360px) / (1500 - 360))), 105px);
+    bottom: 5%;
+    left: 45%;
+}
+.star.tres{
+    position: absolute;
+    z-index: 5;
+    width: clamp(20px, calc(20px + (190 - 20) * ((100vw - 360px) / (1500 - 360))), 190px);
+    top: 40%;
+    right: -5%;
+    transform: translate(0%, -40%);
+}
+.star.cuatro{
+    position: absolute;
+    z-index: 5;
+    width: clamp(20px, calc(20px + (190 - 20) * ((100vw - 360px) / (1500 - 360))), 190px);
+    top: -5%;
+    left: 40%;
+    transform: rotate(30deg);
+}
+.lobby-choose{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    box-sizing: border-box;
+    /* width: 50%; */
+
+    padding: clamp(5px, calc(5px + (30 - 5) * ((100vw - 360px) / (1500 - 360))), 30px)
+    0;
+}
+.lobby-config{
+    flex: 1;
+
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    /* justify-content: center; */
+    position: relative;
+}
+.lcc-aux{
+    background-color: white;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    padding: clamp(5px, calc(5px + (10 - 5) * ((100vw - 360px) / (1500 - 360))), 10px);
+    border-radius: clamp(5px, calc(5px + (10 - 5) * ((100vw - 360px) / (1500 - 360))), 10px);
+
+    box-sizing: border-box;
+}
+.cintita.uno{
+    width: clamp(20px, calc(20px + (170 - 20) * ((100vw - 360px) / (1500 - 360))), 170px);
+    object-fit: cover;
+    top: 0;
+    align-self: center;           /* centrada arriba */
+    transform: translateY(50%);  /*empuja hacia abajo sobre lcc-aux */
+    z-index: 2;     
+}
+.cintita.dos{
+    position: absolute;
+    width: clamp(20px, calc(20px + (170 - 20) * ((100vw - 360px) / (1500 - 360))), 170px);
+    object-fit: cover;
+    right: 10%;
+    top: 0;
+    transform: translateX(50%) rotate(25deg);
+}
+.cintita.tres{
+    position: absolute;
+    width: clamp(20px, calc(20px + (170 - 20) * ((100vw - 360px) / (1500 - 360))), 170px);
+    object-fit: cover;
+    right: 50%;
+    top: 0%;
+    transform: translateX(50%) translateY(-50%) rotate(0deg);
+}
+.lc-aux{
+    display: flex;
+    flex-direction: column;
+    align-items: start;   /* centra los bloques dentro del contenedor */
+    gap: -20px;            /* ❌ no existe gap negativo, así que haremos overlay con margin */
+    position: relative;
+    padding-top: 5%;
+}
+#level-name{
+    font-size: clamp(10px, calc(10px + (48 - 10) * ((100vw - 360px) / (1500 - 360))), 48px);
+}
+.level-d,
+.lc-code{
+    font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
+}
+.level-d{
+    background-color: var(--cyellow);
+    width: 100%;
+    padding: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    border-radius: clamp(5px, calc(5px + (30 - 5) * ((100vw - 360px) / (1500 - 360))), 30px);
+    display: flex;
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+}
+.pn{ /*prev, next*/
+    background-color: white;
+    border-radius: 100%;
+    font-size: clamp(12px, calc(12px + (58 - 12) * ((100vw - 360px) / (1500 - 360))), 58px);
+    width: clamp(15px, calc(15px + (70 - 15) * ((100vw - 360px) / (1500 - 360))), 70px);
+    height: clamp(15px, calc(15px + (70 - 15) * ((100vw - 360px) / (1500 - 360))), 70px);
+    aspect-ratio: 1/1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
     cursor: pointer;
 }
+.lc-level.uno,
+.lc-level.tres{
+    transform: rotate(5deg);
+}
+.lc-level.dos{
+    transform: rotate(-5deg);
+}
+.lc-level{
+    height: clamp(70px, calc(70px + (420 - 70) * ((100vw - 360px) / (1500 - 360))), 420px);
+    width: clamp(65px, calc(65px + (350 - 65) * ((100vw - 360px) / (1500 - 360))), 350px);
+
+    position: relative;
+    background-color: white;
+    
+    box-shadow: 
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+}
+.bg{
+    position: absolute;
+    top: 0;
+    left: 0;
+    object-fit: cover;
+    width: 100%;
+    height: 100%;
+    padding: clamp(5px, calc(5px + (10 - 5) * ((100vw - 360px) / (1500 - 360))), 10px);
+    /* border-radius: clamp(5px, calc(5px + (30 - 5) * ((100vw - 360px) / (1500 - 360))), 30px); */
+}
+.lcl-name-wrapper,
+.lcl-name{
+    aspect-ratio: 1/1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lcl-name-wrapper{
+    position: absolute;
+    top: 0%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(5deg);
+    background-color: white;
+    width: 35%;
+    aspect-ratio: 1/1;
+    clip-path: polygon(
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
+    );
+}
+.lcl-name{
+    width: 85%;
+    font-size: clamp(5px, calc(5px + (32 - 5) * ((100vw - 360px) / (1500 - 360))), 32px);
+    
+    border-radius: 100%;
+    background-color: var(--cyellow);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
+.lcl-bottom{
+    background-color: white;
+    width: 100%;
+    height: clamp(20px, calc(20px + (120 - 20) * ((100vw - 360px) / (1500 - 360))), 120px);
+
+    position: absolute;
+    bottom: 0;
+    left: 0;
+}
+.lc-code{
+    aspect-ratio: 1 / 1;      /* cuadrado perfecto */
+    width: 60%;               /* ajusta tamaño */
+    
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s;
+
+    position: relative;
+}
+/* El primero se queda en flujo normal */
+.lc-code:nth-child(1){
+    transform: rotate(-5deg);
+    z-index: 1;
+    background: rgb(254, 255, 166);
+}
+
+/* El segundo se sale del flujo */
+.lc-code:last-child {
+    position: absolute;   /* ya no ocupa espacio en el flujo */
+    bottom: -30%;            /* pegado abajo dentro de lc-aux */
+    right: 0;             /* alineado a la derecha */
+    transform: translateY(30%) rotate(5deg);
+    z-index: 2;           /* encima del primero */
+
+    background: var(--corange);
+}
+.lc-code input{
+    width: 90%;
+    /* padding: 10px 20px; */
+    font-size: clamp(8px, calc(8px + (40 - 8) * ((100vw - 360px) / (1500 - 360))), 40px);
+    text-align: center;
+    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1500 - 360))), 3px) solid black;
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+
+    transition: transform .3s ease;
+    
+}
+.lc-code input:hover{
+    transform: scale(1.5);
+    cursor: pointer;
+    z-index: 10;
+}
+.lc-code-top{
+    height: clamp(8px, calc(8px + (50 - 8) * ((100vw - 360px) / (1500 - 360))), 50px);
+    
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.lc-code-top.uno{
+    background-color: rgb(243, 234, 156);
+}
+.lc-code-top.dos{
+    background-color: #e99700;
+}
+.lcp-wrapper,
+.lcp{
+    aspect-ratio: 1/1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.lcp-wrapper{
+    background-color: white;
+    width: 45%;
+    aspect-ratio: 1/1;
+    clip-path: polygon(
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
+    );
+    transition: transform .3s ease;
+}
+.lcp-wrapper:hover{
+    transform: scale(1.5);
+    cursor: pointer;
+}
+.lcp{
+    width: 85%;
+    font-size: clamp(5px, calc(5px + (42 - 5) * ((100vw - 360px) / (1500 - 360))), 42px);
+    
+    border-radius: 100%;
+    background-color: var(--cyellow);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
+.lcl-name{
+    width: 85%;
+    font-size: clamp(5px, calc(5px + (32 - 5) * ((100vw - 360px) / (1500 - 360))), 32px);
+    
+    border-radius: 100%;
+    background-color: var(--cyellow);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
 
 
-/*      KEYFRAMES ANIMATION     */
-/*
-.gmo-start-wrapper:hover,
-.gmo-config-wrapper:hover,
-.gmo-credits-wrapper:hover,
-.gmo-exit-wrapper:hover{
-  animation: flash .5s ease infinite alternate;
+.lc-start-wrapper,
+.lc-start{
+    clip-path: polygon(
+        95% 0%, 5% 15%, 0% 20%, 3% 90%,
+        30% 120%, 90% 85%, 97% 80%, 100% 20%
+    );
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-@keyframes flash {
-	from { opacity: 1; }	
-	to { opacity: 0; }
+.lc-start-wrapper{
+    background-color: black;
+    height: clamp(30px, calc(30px + (120 - 30) * ((100vw - 360px) / (1500 - 360))), 120px);
+    width: clamp(70px, calc(70px + (300 - 70) * ((100vw - 360px) / (1500 - 360))), 300px);
+
+    transition: transform .3s ease;
 }
-*/
+.lc-start-wrapper:hover{
+    transform: scale(1.2);
+    cursor: pointer;
+}
+.lc-start{
+    width: 95%;
+    height: 83%;
+    background-color: var(--cgreen);
+
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    font-size: clamp(8px, calc(8px + (32 - 8) * ((100vw - 360px) / (1500 - 360))), 32px);
+}
 
 /*DESKTOP* JALA/
 /*
@@ -956,24 +1525,3 @@ body{
 */
 
 /*      BREAKPOINTS RESPONSIVE      */
-@media(max-width:1366px){
-    .main-aux{
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-    }
-    .game-screen {
-        max-width: 100%; /* ancho máximo considerando la barra lateral y el gap */
-        max-height: 100dvh;      /* nunca sobrepasa la altura del viewport */
-        aspect-ratio: 16 / 9;    /* mantiene proporción */
-    }
-}
-@media(max-width:450px){
-    .r-bscore, .r-bscore-r, .r-bscore-t{
-        transform: rotate(0deg);
-    }
-    .r-bscore:hover, .r-bscore-r:hover, .r-bscore-t:hover{
-        transform: scale(1.3);
-        transform-origin: center center;
-    }
-}

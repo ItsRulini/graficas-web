@@ -5,9 +5,9 @@ export class Menu {
         this.init();
         this.bindEvents();
         this.GSAP();
-        this.showDisplay(this.currentIndex);
         this.togglePauseMenu(false);
         this.musicToogle(this.isPlaying); // Iniciar sin música
+        this.showLevel(this.currentLevelIndex); //seleccionar nivel
     }
 
 
@@ -28,19 +28,23 @@ export class Menu {
         this.closeCredits = document.getElementById('close-gmct');
         this.credits = document.querySelector('.gm-credits');
 
-        // Start game
+        //Entrar al juego
+        this.PlayGame = document.getElementById('pGame');
+
+        // Abrir opciones para crear sala o unirse
         this.startGame = document.getElementById('gmo-start');
-        
+
+        this.startCreate = document.getElementById('start-start'); //crear el juego
+        this.closeCreate = document.getElementById('close-gms');
+        this.playOPT = document.getElementById('play-options');
+        this.selectedOPT = document.getElementById('host');
+
+        //  Create lobby
+        this.host = document.getElementById('hlobby'); //crear sala
+        this.closeLobby = document.getElementById('close-gml');
+
         // Logout
         this.logout = document.getElementById('gmo-exit');
-
-        // Dificultades
-        this.dificulties = document.querySelectorAll(".gmc-display");
-        this.currentIndex = 0;
-
-        // Botones de dificultad
-        this.prevBtn = document.getElementById("prev");
-        this.nextBtn = document.getElementById("next");
 
         // Texto de los créditos
         this.raul = document.getElementById("raul");
@@ -87,12 +91,48 @@ export class Menu {
         // Música de fondo
         this.backgroundMusic = document.getElementById("background-music");
         this.backgroundMusic.volume = 0.5;
-    }
 
+        //Seleccionar el nivel
+        this.levels = document.querySelectorAll(".lc-level"); // todos los niveles
+        this.levelPrevBtn = document.getElementById("lc-prev");
+        this.levelNextBtn = document.getElementById("lc-next");
+        this.currentIndex = 0;
+        this.currentLevelIndex = 0;
+
+        this.levelData = [
+            { name: "Level Name One", desc: "First scenary description." },
+            { name: "Level Name Two", desc: "Second scenary description." },
+            { name: "Level Name Three", desc: "Third scenary description." }
+        ];
+
+        this.levelName = document.getElementById("level-name");
+        this.levelDesc = document.getElementById("level-desc");
+
+        //dificultad del nivel
+        this.difficulties = ["EASY", "MEDIUM", "HARD"];
+        this.difficultyIndex = 0;
+        this.difficultyDisplay = document.getElementById("ld-display");
+
+        this.ldPREV = document.getElementById("ld-prev");
+        this.ldNEXT = document.getElementById("ld-next");
+
+        // Dificultades
+        this.dificulties = document.getElementById("gm-dif");
+        this.currentIndexD = 0;
+
+        // Botones de dificultad
+        this.prevBtn = document.getElementById("prev");
+        this.nextBtn = document.getElementById("next");
+
+        //Abrir barra derecha
+        this.PlayerBtn = document.querySelector(".gm-btn-display");
+        this.PlayerBar = document.getElementById("gd-player");
+
+    }
     bindEvents() {
 
-        // Iniciar juego
-        this.startGame.addEventListener("click", () => {
+        // // Iniciar juego
+        this.PlayGame.addEventListener("click", () => {
             window.location.href = "SCENE.html";
         });
 
@@ -158,16 +198,51 @@ export class Menu {
         this.closeCredits.addEventListener('click', () => {
             this.credits.style.display = 'none';
         });
+        
+        this.startGame.addEventListener('click', () => {
+            this.startCreate.style.display = 'flex';
+        });
+
+        this.closeCreate.addEventListener('click', () => {
+            this.startCreate.style.display = 'none';
+        });
+        // Crear sala
+        this.selectedOPT.addEventListener('click', () => {
+            this.host.style.display = 'flex';
+            this.playOPT.style.display = 'none';
+        });
+
+        this.closeLobby.addEventListener('click', () => {
+            this.host.style.display = 'none';
+            this.playOPT.style.display = 'block';
+        });
+
+        // Abrir barra derecha del jugador
+        this.PlayerBtn.addEventListener('click', () => {
+            this.PlayerBar.classList.toggle('active');
+        });
+
 
         // Botones de dificultad
         this.prevBtn.addEventListener("click", () => {
-            this.currentIndex = (this.currentIndex - 1 + this.dificulties.length) % this.dificulties.length;
-            this.showDisplay(this.currentIndex);
+            this.currentIndexD = (this.currentIndexD - 1 + this.difficulties.length) % this.difficulties.length;
+            this.dificulties.textContent = this.difficulties[this.currentIndexD];
         });
 
         this.nextBtn.addEventListener("click", () => {
-            this.currentIndex = (this.currentIndex + 1) % this.dificulties.length;
-            this.showDisplay(this.currentIndex);
+            this.currentIndexD = (this.currentIndexD + 1) % this.difficulties.length;
+            this.dificulties.textContent = this.difficulties[this.currentIndexD];
+        });
+
+        //Botones de dificultad de NIVEL
+        this.ldPREV.addEventListener("click", () => {
+            this.difficultyIndex = (this.difficultyIndex - 1 + this.difficulties.length) % this.difficulties.length;
+            this.difficultyDisplay.textContent = this.difficulties[this.difficultyIndex];
+        });
+
+        this.ldNEXT.addEventListener("click", () => {
+            this.difficultyIndex = (this.difficultyIndex + 1) % this.difficulties.length;
+            this.difficultyDisplay.textContent = this.difficulties[this.difficultyIndex];
         });
 
         // Texto de los créditos
@@ -232,36 +307,58 @@ export class Menu {
             });
         });
 
-        // Cambiar el nombre de colores
-        Object.keys(this.colors).forEach(id => {
-            document.getElementById(id).addEventListener("click", () => {
-                this.username.style.animation = "";
-                this.username.style.color = this.colors[id];
-            });
+        // // Cambiar el nombre de colores
+        // Object.keys(this.colors).forEach(id => {
+        //     document.getElementById(id).addEventListener("click", () => {
+        //         this.username.style.animation = "";
+        //         this.username.style.color = this.colors[id];
+        //     });
+        // });
+
+        // // Botón rainbow con animación
+        // this.rainbowBtn.addEventListener("click", () => {
+        //     this.username.style.animation = "rainbow 2s infinite linear";
+        // });
+
+        // // Foto de perfil
+        // this.profileImage.addEventListener("click", () => {
+        //     this.fileInput.click();
+        // });
+
+        // this.fileInput.addEventListener("change", (event) => {
+        //     const file = event.target.files[0];
+        //     if (file) {
+        //         const reader = new FileReader();
+        //         reader.onload = (e) => {
+        //             this.profileImage.src = e.target.result;
+        //         };
+        //         reader.readAsDataURL(file);
+        //     }
+        // });
+
+        //Seleccionar Nivel
+        this.levelPrevBtn.addEventListener("click", () => {
+            this.currentLevelIndex = (this.currentLevelIndex - 1 + this.levels.length) % this.levels.length;
+            this.showLevel(this.currentLevelIndex);
         });
 
-        // Botón rainbow con animación
-        this.rainbowBtn.addEventListener("click", () => {
-            this.username.style.animation = "rainbow 2s infinite linear";
+        this.levelNextBtn.addEventListener("click", () => {
+            this.currentLevelIndex = (this.currentLevelIndex + 1) % this.levels.length;
+            this.showLevel(this.currentLevelIndex);
         });
-
-        // Foto de perfil
-        this.profileImage.addEventListener("click", () => {
-            this.fileInput.click();
-        });
-
-        this.fileInput.addEventListener("change", (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    this.profileImage.src = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        });
-        
     }
+    showLevel(index) {
+        this.levels.forEach((level, i) => {
+            level.style.display = i === index ? "inline-flex" : "none";
+        });
+        // Cambiar título y descripción
+        if (this.levelData[index]) {
+            this.levelName.textContent = this.levelData[index].name;
+            this.levelDesc.textContent = this.levelData[index].desc;
+        }
+    }
+
+    
 
     GSAP() {
         gsap.from('.gmo-start-wrapper', {
@@ -285,13 +382,6 @@ export class Menu {
             y: 100
         });
     }
-
-    showDisplay(index) {
-        this.dificulties.forEach((el, i) => {
-            el.classList.toggle("active", i === index);
-        });
-    }
-
     togglePauseMenu(open) {
         if (open) {
             this.pauseMenu.style.display = "inline-flex";

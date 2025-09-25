@@ -30,13 +30,69 @@
         <!-- PANTALLA -->
         <div class="game-screen">
             <div class="game-menu">
+                <!-- DISPLAY RIGHT BAR -->
+                <button class="gm-btn-display"><i class="fa-solid fa-bars"></i></button>
+                <!-- BARRA DERECHA -->
+                <div class="game-display" id="gd-player">
+                    <div class="gd-cw"></div>
+                    <img src="resources/img/paw.png" alt="paw" id="paw">
+                    <div class="gd-aux">
+                        <div class="gd-info">
+                            <div class="gd-circle"></div>
+                            <div class="gdd-img">
+                                <img src="resources/img/border.png" alt="border" id="border">
+                                <img src="resources/img/pfp.jpg" alt="avatar" id="avatar">
+                                <div class="barcode">
+                                    <i class="fa-solid fa-barcode"></i>
+                                    <i class="fa-solid fa-barcode"></i>
+                                    <i class="fa-solid fa-barcode"></i>
+                                    <i class="fa-solid fa-barcode"></i>
+                                    <i class="fa-solid fa-barcode"></i>
+                                </div>
+                                <p id="playercard">PLAYER CARD</p>
+                            </div>
+                            <div class="gdd-input">
+                                <span id="idspan">ID: 200300</span>
+                                <div class="gi player">
+                                    <span><i class="fa-solid fa-star"></i></span>
+                                    <span>PLAYER SINCE:</span>
+                                    <span>9/23/25</span>
+                                </div>
+                                <div class="gi name">
+                                    <span>NAME:</span>
+                                    <span>Username</span>
+                                </div>
+                                <div class="gi-aux">
+                                    <div class="gi">
+                                        <span>BEST SCORE:</span>
+                                        <span>9999</span>
+                                    </div>
+                                    <div class="gi">
+                                        <span><i class="fa-regular fa-clock"></i>:</span>
+                                        <span>03:19</span>
+                                    </div>
+                                </div>
+                                <div class="gi-aux">
+                                    <div class="gi">
+                                        <span>TOTAL WINS:</span>
+                                        <span>9999</span>
+                                    </div>
+                                    <div class="gi">
+                                        <span><i class="fa-solid fa-skull"></i>:</span>
+                                        <span>9999</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <!-- MENU PRINCIPAL -->
                 <div class="gm-opt">
                     <div class="gm-img">
                         <img src="resources/img/logo.png" alt="logo">
                     </div>
-                    <div class="gmo-start-wrapper">
-                        <div class="gmo-start" id="gmo-start">
+                    <div class="gmo-start-wrapper" id="gmo-start">
+                        <div class="gmo-start">
                             <span><i class="fa-solid fa-play"></i></span>
                             <span>START</span>
                         </div>
@@ -55,6 +111,148 @@
                     <div class="gmo-exit-wrapper" id="gmo-exit">
                         <div class="gmo-exit">
                             <span>EXIT</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- START MENU -->
+                <div class="gm-start" style="display: none;" id="start-start">
+                    <div class="gms-aux">
+                        <div class="gms-stf"></div>
+                        <div class="gms-st">
+                            <div class="gms-st-aux" id="play-options">
+                                    <div class="gms-imgs">
+                                    <img src="resources/img/star.png" alt="star" id="star-g">
+                                    <img src="resources/img/star.png" alt="star" id="star-gd">
+                                    <img src="resources/img/9.png" alt="nueve" id="nueve-g">
+                                    <img src="resources/img/8.png" alt="ocho" id="ocho-g">
+                                    <img src="resources/img/11.png" alt="once" id="once-g">
+                                </div>
+                                <div class="gms-back">
+                                    <div class="gms-x" id="close-gms"><i class="fa-solid fa-arrow-left"></i></div>
+                                </div>
+                                <div class="gms-title">
+                                    <p>Let the chaos</p>
+                                    <img src="resources/img/begin.png" alt="begin">
+                                </div>
+                                <!-- CREATE or JOIN LOBBY -->
+                                <div class="gms-wrap">
+                                    <div class="gms-create" id="create-lob"> <!-- crear sala -->
+                                        <div class="gmsc-bg uno" id="host">
+                                            <i class="fa-solid fa-plus" id="i-plus"></i>
+                                            <div class="create-i">
+                                                <div class="ci uno"><i class="fa-regular fa-flag"></i></div>
+                                            </div>
+                                            <div class="create-icons">
+                                                <span><i class="fa-solid fa-user-plus"></i></span>
+                                            </div>
+                                            <div class="create-wrapper">
+                                            </div>
+                                            <div class="create-g uno">
+                                                <p>Host Lobby</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="gms-join" id="join-lob"> <!-- join sala -->
+                                        <div class="gmsc-bg dos">
+                                            <img src="resources/img/gamepad.png" alt="gamepad" id="imggp">
+                                            <div class="create-i">
+                                                <div class="ci dos"><i class="fa-solid fa-wifi"></i></div>
+                                            </div>
+                                            <div class="create-icons">
+                                                <span><i class="fa-solid fa-user"></i></span>
+                                                <span><i class="fa-solid fa-user"></i></span>
+                                                <span><i class="fa-solid fa-user"></i></span>
+                                                <span><i class="fa-solid fa-user"></i></span>
+                                            </div>
+                                            <div class="create-wrapper">
+                                            </div>
+                                            <div class="create-g dos">
+                                                <p>#Join Lobby</p>
+                                            </div>
+                                            
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- OPTIONS to CREATE a lobby -->
+                            <div class="gmsc-lobby" id="hlobby" style="display: none;">
+                                <div class="gml-back">
+                                    <div class="gml-x" id="close-gml"><i class="fa-solid fa-arrow-left"></i></div>
+                                </div>
+                                <div class="lobby-aux">
+                                    <img src="resources/img/star.png" alt="star" class="star uno">
+                                    <img src="resources/img/star.png" alt="star" class="star dos">
+                                    <img src="resources/img/star.png" alt="star" class="star tres">
+                                    <img src="resources/img/10.png" alt="starscitas" class="star cuatro">
+                                    <div class="lobby-choose-aux">
+                                        <div class="lobby-choose">
+                                            <div class="pn" id="lc-prev"><i class="fa-solid fa-caret-left"></i></div>
+                                            <div class="lc-level uno">
+                                                <img src="resources/img/bg.jpg" alt="bg" class="bg">
+                                                <div class="lcl-name-wrapper">
+                                                    <div class="lcl-name">
+                                                        <i class="fa-solid fa-crown"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="lcl-bottom"></div>
+                                            </div>
+                                            <div class="lc-level dos">
+                                                <img src="resources/img/bg.jpg" alt="bg" class="bg">
+                                                <div class="lcl-name-wrapper">
+                                                    <div class="lcl-name">
+                                                        <i class="fa-solid fa-crown"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="lcl-bottom"></div>
+                                            </div>
+                                            <div class="lc-level tres">
+                                                <img src="resources/img/bg.jpg" alt="bg" class="bg">
+                                                <div class="lcl-name-wrapper">
+                                                    <div class="lcl-name">
+                                                        <i class="fa-solid fa-crown"></i>
+                                                    </div>
+                                                </div>
+                                                <div class="lcl-bottom"></div>
+                                            </div>
+                                            <div class="pn" id="lc-next"><i class="fa-solid fa-caret-right"></i></div>
+                                        </div>
+                                        <div class="gmc-gamemode" id="level-dif">
+                                                <div class="arrow" id="ld-prev"><i class="fa-solid fa-caret-left"></i></div>
+                                                <div class="gmc-display" id="ld-display">EASY</div>
+                                                <div class="arrow" id="ld-next"><i class="fa-solid fa-caret-right"></i></div>
+                                            </div>
+                                    </div>
+                                    <div class="lobby-config">
+                                        <img src="resources/img/8.png" alt="cinta" class="cintita uno">
+                                        <div class="lcc-aux">
+                                            <p id="level-name">Level Name</p>
+                                            <div class="level-d">
+                                                <span><i class="fa-solid fa-circle-exclamation"></i></span>
+                                                <span id="level-desc">Lorem ipsum dolor sit amet consectetur</span>
+                                            </div>
+                                        </div>
+                                        <div class="lc-aux">
+                                            <div class="lc-code">
+                                                <div class="lc-code-top uno"></div>
+                                                <img src="resources/img/8.png" alt="cinta" class="cintita dos">
+                                                <p>#Room Code:</p>
+                                                <input type="text" value="#RYOFG">
+                                            </div>
+                                            <div class="lc-code">
+                                                <div class="lc-code-top dos"></div>
+                                                <img src="resources/img/8.png" alt="cinta" class="cintita tres">
+                                                <p>Start!</p>
+                                                <div class="lcp-wrapper" id="pGame">
+                                                    <div class="lcp">
+                                                        <i class="fa-solid fa-play"></i>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- SELECT player -->
                         </div>
                     </div>
                 </div>
@@ -96,9 +294,7 @@
                             </div>
                             <div class="gmc-gamemode" id="gamemode-gmc">
                                 <div class="arrow" id="prev"><i class="fa-solid fa-caret-left"></i></div>
-                                <div class="gmc-display" id="easy">EASY</div>
-                                <div class="gmc-display" id="medium">MEDIUM</div>
-                                <div class="gmc-display" id="hard">HARD</div>
+                                <div class="gmc-display" id="gm-dif">EASY</div>
                                 <div class="arrow" id="next"><i class="fa-solid fa-caret-right"></i></div>
                             </div>
                             <div class="gmc-reload-wrapper" style="display: none;" id="reload-gmc"> <!-- se muestra solo en el menu de pausa -->
@@ -159,78 +355,7 @@
                 </div>
             </div>
         </div>
-        <!-- BARRA DERECHA -->
-        <div class="game-display" >
-            <div class="game-user">
-                <div class="gu-banner">
-                    <!-- imagen? -->
-                </div>
-                <div class="gu-pfp">
-                    <input type="file" id="fileInput" accept="image/jpeg, image/png, image/jpg" style="display: none;">
-                    <img src="resources/img/pfp.jpg" id="profileImage" alt="pfp" onclick="selectImage()">
-                </div>
-                <div class="game-uname">
-                    <p id="username">Username</p>
-                    <div class="game-uname-content">
-                        <button id="white"></button> 
-                        <button id="black"></button> 
-                        <button id="yellow"></button> 
-                        <button id="green"></button>
-                        <button id="blue"></button>
-                        <button id="red"></button>
-                        <button id="rainbow"></button>
-                    </div>
-                </div>
-            </div>
-            <div class="game-stats">
-                <div class="status-wrapper">
-                    <div class="status">
-                        <img src="resources/img/STATS.png" alt="">
-                    </div>
-                </div>
-                <div class="resume">
-                    <div class="resume-img">
-                        <img src="resources/img/1.png" alt="exclamation" id="exc">
-                        <img src="resources/img/4.png" alt="sun" id="sun">
-                        <img src="resources/img/5.png" alt="star" id="star">
-                        <img src="resources/img/2.png" alt="pow" id="pow">
-                    </div>
-                    <div class="r-left">
-                        <div class="rl-page"></div>
-                        <div class="rl-page"></div>
-                        <div class="rl-page"></div>
-                        <div class="rl-page"></div>
-                        <div class="rl-page"></div>
-                    </div>
-                    <div class="rl-container">
-                        <div class="r-bscore-aux" id="aux-one">
-                            <div class="r-bscore" >
-                                <span>Best Score:</span>
-                                <span>9999</span>
-                            </div>
-                        </div>
-                        <div class="r-bscore-aux" id="aux-two">
-                            <div class="r-bscore-r" >
-                                <span><i class="fa-solid fa-clock"></i> Play Time:</span>
-                                <span>03:35</span>
-                            </div>
-                        </div>
-                        <div class="r-bscore-aux" id="aux-three">
-                            <div class="r-bscore-t" >
-                                <span>Total Wins:</span>
-                                <span>9999</span>
-                            </div>
-                        </div>
-                        <div class="r-bscore-aux" id="aux-four">
-                            <div class="r-bscore-r" >
-                                <span>Total <i class="fa-solid fa-skull"></i>:</span>
-                                <span>9999</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        
         </div>
     </div>
     <!-- SCRIPTS.js -->
