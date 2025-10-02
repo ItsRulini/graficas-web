@@ -3,6 +3,70 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.118/build/three.mod
 import {FBXLoader} from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm/loaders/FBXLoader.js';
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 
+////    MODELOS de PERSONAJES    ////
+const characters = {
+    yoshi: {
+        model: 'yoshi.fbx',
+        path: './resources/3D/yoshi/',
+        animPath: './resources/3D/yoshi/animations/',
+        scale: 0.05,
+        textures: [
+            './resources/3D/yoshi/t0473_0.png',
+            './resources/3D/yoshi/t0481_0.png'
+        ],
+        animations: [
+            { name: 'walk', file: 'Dwarf_Walk.fbx' },
+            { name: 'run', file: 'Run_Forward.fbx' },
+            { name: 'idle', file: 'Breathing_Idle.fbx' }
+        ]
+    },
+    ness: {
+        model: 'ness.fbx',
+        path: './resources/3D/ness/',
+        animPath: './resources/3D/ness/animations/',
+        scale: 0.05,
+        textures: [
+            './resources/3D/ness/ness_body_low.png'
+        ],
+        animations: [
+            { name: 'walk', file: 'Happy_Walk.fbx' },
+            { name: 'run', file: 'Running.fbx' },
+            { name: 'idle', file: 'Happy_Idle.fbx' }
+        ]
+    },
+    isabelle: {
+        model: 'isabelle.fbx',
+        path: './resources/3D/isabelle/',
+        animPath: './resources/3D/isabelle/animations/',
+        scale: 0.05,
+        textures: [
+            './resources/3D/isabelle/b0.png',
+            './resources/3D/isabelle/cloth.png',
+            './resources/3D/isabelle/e0.png',
+            './resources/3D/isabelle/m0.png'
+        ],
+        animations: [
+            { name: 'walk', file: 'Catwalk_Walk_Forward_Crossed.fbx' },
+            { name: 'run', file: 'Run.fbx' },
+            { name: 'idle', file: 'Unarmed_Idle_Looking_Ver2.fbx' }
+        ]
+    },
+    bomberman: {
+        model: 'bomberman.fbx',
+        path: './resources/3D/bomberman/',
+        animPath: './resources/3D/bomberman/animations/',
+        scale: 0.05,
+        textures: [
+            './resources/3D/bomberman/bom_face01.png',
+            './resources/3D/bomberman/bomberman00.png'
+        ],
+        animations: [
+            { name: 'walk', file: 'Strut_Walking.fbx' },
+            { name: 'run', file: 'Running.fbx' },
+            { name: 'idle', file: 'Standing_W_Briefcase_Idle.fbx' }
+        ]
+    }
+};
 
 class BasicCharacterControllerProxy {
   constructor(animations) {
@@ -13,7 +77,6 @@ class BasicCharacterControllerProxy {
     return this._animations;
   }
 };
-
 
 class BasicCharacterController {
   constructor(params) {
@@ -37,45 +100,88 @@ class BasicCharacterController {
     this._LoadModels();
   }
 
-  _LoadModels() {
-    const loader = new FBXLoader();
-    loader.setPath('./resources/3D/');
-    loader.load('character.fbx', (fbx) => {
-      fbx.scale.setScalar(0.05);
-      fbx.traverse(c => {
-        c.castShadow = true;
-      });
-
-      this._target = fbx;
-      this._params.scene.add(this._target);
-
-      // Inicializar la posición anterior cuando se carga el modelo
-      this._previousPosition.copy(this._target.position);
-
-      this._mixer = new THREE.AnimationMixer(this._target);
-
-      this._manager = new THREE.LoadingManager();
-      this._manager.onLoad = () => {
-        this._stateMachine.SetState('idle');
-      };
-
-      const _OnLoad = (animName, anim) => {
-        const clip = anim.animations[0];
-        const action = this._mixer.clipAction(clip);
-  
-        this._animations[animName] = {
-          clip: clip,
-          action: action,
-        };
-      };
-
-      const loader = new FBXLoader(this._manager);
-      loader.setPath('./resources/3D/');
-      loader.load('Walking.fbx', (a) => { _OnLoad('walk', a); });
-      loader.load('running.fbx', (a) => { _OnLoad('run', a); });
-      loader.load('Idle.fbx', (a) => { _OnLoad('idle', a); });
+//Cargar modelo
+_LoadFBX(path, modelFile, scale) {
+    return new Promise((resolve, reject) => {
+        const loader = new FBXLoader();
+        loader.setPath(path);
+        loader.load(modelFile, (fbx) => {
+            fbx.scale.setScalar(scale);
+            resolve(fbx);
+        }, undefined, reject);
     });
-  }
+}
+//Cargar animaciones
+_LoadAnimations(animPath, animations) {
+    const loader = new FBXLoader();
+    loader.setPath(animPath);
+
+    const promises = animations.map(anim => {
+        return new Promise((resolve) => {
+            loader.load(anim.file, (a) => {
+                if (a.animations && a.animations.length > 0) {
+                    resolve(a.animations[0]);
+                } else {
+                    resolve(null);
+                }
+            }, undefined, () => resolve(null));
+        });
+    });
+
+    return Promise.all(promises);
+}
+
+//    Cargar modelo seleccionado    //
+async _LoadModels() {
+    const PlayerName = localStorage.getItem('PlayerName'); //obtener el id del LS
+    if (!PlayerName || !characters[PlayerName]) return;
+
+    const character = characters[PlayerName];
+
+    // 1. Cargar modelo
+    this._target = await this._LoadFBX(character.path, character.model, character.scale);
+    const textureLoader = new THREE.TextureLoader();
+    this._target.traverse(c => {
+    if (c.isMesh) {
+        c.castShadow = true;
+        c.receiveShadow = true;
+
+        if (Array.isArray(c.material)) {
+            c.material.forEach((mat, idx) => {
+                if (character.textures[idx]) {
+                    mat.map = textureLoader.load(character.textures[idx]);
+                    mat.needsUpdate = true;
+                }
+            });
+        }
+    }
+});
+
+    this._params.scene.add(this._target);
+
+    // 2. Crear mixer
+    this._mixer = new THREE.AnimationMixer(this._target);
+    this._animations = {};
+
+    // 3. Cargar animaciones
+    const clips = await this._LoadAnimations(character.animPath, character.animations);
+    character.animations.forEach((anim, i) => {
+        if (clips[i]) {
+            const action = this._mixer.clipAction(clips[i]);
+            this._animations[anim.name] = { clip: clips[i], action };
+        }
+    });
+    //
+    this._proxy = new BasicCharacterControllerProxy(this._animations);
+    this._stateMachine = new CharacterFSM(this._proxy);
+    this._stateMachine.SetState('idle');
+    console.log("Animaciones cargadas:", Object.keys(this._animations));
+
+    // 4. Iniciar FSM
+    if (this._stateMachine) {
+        this._stateMachine.SetState('idle');
+    }
+}
 
   // Método para obtener la posición actual del personaje
   GetCharacterPosition() {
@@ -354,6 +460,10 @@ class WalkState extends State {
   }
 
   Enter(prevState) {
+    if (!this._parent._proxy._animations['walk']) {
+        console.warn("Animación 'walk' aún no cargada");
+        return;
+    }
     const curAction = this._parent._proxy._animations['walk'].action;
     if (prevState) {
       const prevAction = this._parent._proxy._animations[prevState.Name].action;
@@ -402,6 +512,10 @@ class RunState extends State {
   }
 
   Enter(prevState) {
+    if (!this._parent._proxy._animations['run']) {
+        console.warn("Animación 'run' aún no cargada");
+        return;
+    }
     const curAction = this._parent._proxy._animations['run'].action;
     if (prevState) {
       const prevAction = this._parent._proxy._animations[prevState.Name].action;
@@ -450,6 +564,10 @@ class IdleState extends State {
   }
 
   Enter(prevState) {
+    if (!this._parent._proxy._animations['idle']) {
+        console.warn("Animación 'idle' aún no cargada");
+        return;
+    }
     const idleAction = this._parent._proxy._animations['idle'].action;
     if (prevState) {
       const prevAction = this._parent._proxy._animations[prevState.Name].action;
@@ -707,7 +825,9 @@ class CharacterControllerDemo {
   }
 
   _ApplyHeightMap(heightTexture) {
-    if (!this._terrainGeometry || !heightTexture.image) return;
+    // if (!this._terrainGeometry) return;
+    // if (!this._terrainGeometry.attributes.position) return;
+    if (!heightTexture || !heightTexture.image) return;
 
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
@@ -720,6 +840,8 @@ class CharacterControllerDemo {
     const positions = this._terrainGeometry.attributes.position.array;
     const width = this._terrainGeometry.parameters.widthSegments + 1;
     const height = this._terrainGeometry.parameters.heightSegments + 1;
+
+    if (!positions) return; ////
     
     for (let i = 0; i < height; i++) {
       for (let j = 0; j < width; j++) {

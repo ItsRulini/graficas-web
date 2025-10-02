@@ -39,9 +39,17 @@
                     <div class="gd-aux">
                         <div class="gd-info">
                             <div class="gd-circle"></div>
-                            <div class="gdd-img">
-                                <img src="resources/img/border.png" alt="border" id="border">
-                                <img src="resources/img/pfp.jpg" alt="avatar" id="avatar">
+                            <div class="gdd-img"> 
+                                <div class="gd-user"><!-- dropdown s-->
+                                    <img src="resources/img/border.png" alt="border" id="border">
+                                    <img src="resources/img/default.jpg" alt="avatar" id="avatar">
+                                    <div class="gdu-select"> <!-- dropdown content-->
+                                        <img src="resources/img/ness.png" alt="player" id="ness">
+                                        <img src="resources/img/yoshi.png" alt="player" id="yoshi">
+                                        <img src="resources/img/bomberman.png" alt="player" id="bomberman">
+                                        <img src="resources/img/isabelle.png" alt="player" id="isabelle">
+                                    </div>
+                                </div>
                                 <div class="barcode">
                                     <i class="fa-solid fa-barcode"></i>
                                     <i class="fa-solid fa-barcode"></i>
@@ -93,23 +101,26 @@
                     </div>
                     <div class="gmo-start-wrapper" id="gmo-start">
                         <div class="gmo-start">
-                            <span><i class="fa-solid fa-play"></i></span>
+                            <img src="resources/img/stargreen.png" alt="star" class="gmo-i uno">
                             <span>START</span>
                         </div>
                     </div>
                     <div class="gmo-config-wrapper" id="open-gmc">
                         <div class="gmo-config">
-                            <span><i class="fa-solid fa-gear"></i></span>
+                            <!-- <span><i class="fa-solid fa-gear"></i></span> -->
                             <span>SETTINGS</span>
                         </div>
                     </div>
                     <div class="gmo-credits-wrapper" id="open-gmct">
                         <div class="gmo-credits">
+                            <!-- <span><i class="fa-regular fa-note-sticky"></i></span> -->
                             <span>CREDITS</span>
                         </div>
                     </div>
                     <div class="gmo-exit-wrapper" id="gmo-exit">
                         <div class="gmo-exit">
+                            <span class="gmo-i dos"><i class="fa-solid fa-right-from-bracket"></i></span>
+                            <span class="gmo-i tres"><i class="fa-solid fa-right-from-bracket"></i></span>
                             <span>EXIT</span>
                         </div>
                     </div>
@@ -118,6 +129,7 @@
                 <div class="gm-start" style="display: none;" id="start-start">
                     <div class="gms-aux">
                         <div class="gms-stf"></div>
+                        <div class="gms-stp"></div>
                         <div class="gms-st">
                             <div class="gms-st-aux" id="play-options">
                                     <div class="gms-imgs">
@@ -127,7 +139,7 @@
                                     <img src="resources/img/8.png" alt="ocho" id="ocho-g">
                                     <img src="resources/img/11.png" alt="once" id="once-g">
                                 </div>
-                                <div class="gms-back">
+                                <div class="gms-back sfx-btn-close">
                                     <div class="gms-x" id="close-gms"><i class="fa-solid fa-arrow-left"></i></div>
                                 </div>
                                 <div class="gms-title">
@@ -136,7 +148,7 @@
                                 </div>
                                 <!-- CREATE or JOIN LOBBY -->
                                 <div class="gms-wrap">
-                                    <div class="gms-create" id="create-lob"> <!-- crear sala -->
+                                    <div class="gms-create sfx-btn" id="create-lob"> <!-- crear sala -->
                                         <div class="gmsc-bg uno" id="host">
                                             <i class="fa-solid fa-plus" id="i-plus"></i>
                                             <div class="create-i">
@@ -152,7 +164,7 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="gms-join" id="join-lob"> <!-- join sala -->
+                                    <div class="gms-join sfx-btn" id="join-lob"> <!-- join sala -->
                                         <div class="gmsc-bg dos">
                                             <img src="resources/img/gamepad.png" alt="gamepad" id="imggp">
                                             <div class="create-i">
@@ -176,17 +188,17 @@
                             </div>
                             <!-- OPTIONS to CREATE a lobby -->
                             <div class="gmsc-lobby" id="hlobby" style="display: none;">
-                                <div class="gml-back">
+                                <div class="gml-back sfx-btn-close">
                                     <div class="gml-x" id="close-gml"><i class="fa-solid fa-arrow-left"></i></div>
                                 </div>
                                 <div class="lobby-aux">
-                                    <img src="resources/img/star.png" alt="star" class="star uno">
-                                    <img src="resources/img/star.png" alt="star" class="star dos">
-                                    <img src="resources/img/star.png" alt="star" class="star tres">
+                                    <img src="resources/img/stargreen.png" alt="star" class="star uno">
+                                    <img src="resources/img/stargreen.png" alt="star" class="star dos">
+                                    <img src="resources/img/stargreen.png" alt="star" class="star tres">
                                     <img src="resources/img/10.png" alt="starscitas" class="star cuatro">
                                     <div class="lobby-choose-aux">
                                         <div class="lobby-choose">
-                                            <div class="pn" id="lc-prev"><i class="fa-solid fa-caret-left"></i></div>
+                                            <div class="pn sfx-btn-click" id="lc-prev"><i class="fa-solid fa-caret-left"></i></div>
                                             <div class="lc-level uno">
                                                 <img src="resources/img/bg.jpg" alt="bg" class="bg">
                                                 <div class="lcl-name-wrapper">
@@ -214,12 +226,12 @@
                                                 </div>
                                                 <div class="lcl-bottom"></div>
                                             </div>
-                                            <div class="pn" id="lc-next"><i class="fa-solid fa-caret-right"></i></div>
+                                            <div class="pn sfx-btn-click" id="lc-next"><i class="fa-solid fa-caret-right"></i></div>
                                         </div>
                                         <div class="gmc-gamemode" id="level-dif">
-                                                <div class="arrow" id="ld-prev"><i class="fa-solid fa-caret-left"></i></div>
+                                                <div class="arrow sfx-btn-click" id="ld-prev"><i class="fa-solid fa-caret-left"></i></div>
                                                 <div class="gmc-display" id="ld-display">EASY</div>
-                                                <div class="arrow" id="ld-next"><i class="fa-solid fa-caret-right"></i></div>
+                                                <div class="arrow sfx-btn-click" id="ld-next"><i class="fa-solid fa-caret-right"></i></div>
                                             </div>
                                     </div>
                                     <div class="lobby-config">
@@ -242,11 +254,123 @@
                                                 <div class="lc-code-top dos"></div>
                                                 <img src="resources/img/8.png" alt="cinta" class="cintita tres">
                                                 <p>Start!</p>
-                                                <div class="lcp-wrapper" id="pGame">
+                                                <div class="lcp-wrapper sfx-btn" id="pGame">
                                                     <div class="lcp">
                                                         <i class="fa-solid fa-play"></i>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- JOING LOBBY -->
+                            <div class="gmcj-lobby" id="jlobby" style="display: none;">
+                                <div class="gmcj-back sfx-btn-close">
+                                    <div class="gmcj-x" id="close-gmcj"><i class="fa-solid fa-arrow-left"></i></div>
+                                </div>
+                                <img src="resources/img/8.png" alt="cinta" class="tape uno">
+                                <img src="resources/img/8.png" alt="cinta" class="tape dos">
+                                <img src="resources/img/star.png" alt="star" class="estrellita uno">
+                                <img src="resources/img/star.png" alt="star" class="estrellita dos">
+                                <img src="resources/img/4.png" alt="sun" class="suns" >
+                                <img src="resources/img/stardot.png" alt="stardot" class="stardot"> 
+                                <!-- Active players -->
+                                <div class="lobby-players">
+                                    <div class="lp-ig">
+                                            <img src="resources/img/ig.png" alt="IG">
+                                        </div>
+                                        <div class="lp-aux-show">
+                                            <!-- Player in game -->
+                                            <div class="lp-display">
+                                                <img src="resources/img/pfp.jpg" alt="pfp" id="lp-avatar">
+                                                <div class="lp-aux">
+                                                    <div class="lp-names">
+                                                        <p id="lpn-user">Username</p>
+                                                        <p class="lpn-rank">Host</p>
+                                                    </div>
+                                                    <div class="lp-rank-aux">
+                                                        <p class="rank">RANK</p>
+                                                        <div class="lp-rank">
+                                                            <div class="lpr">
+                                                                <i class="fa-solid fa-crown"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Player to join the lobby -->
+                                            <div class="lp-display-tj">
+                                                <img src="resources/img/question-mark.png" alt="pfp" id="lp-avatar-tj">
+                                                <div class="lp-aux-tj">
+                                                    <div class="lp-names-tj">
+                                                        <p id="lpn-user-tj">???</p>
+                                                        <p class="lpn-rank">???</p>
+                                                    </div>
+                                                    <div class="lp-rank-aux-tj">
+                                                        <p class="rank">RANK</p>
+                                                        <div class="lp-rank-tj">
+                                                            <div class="lpr-tj">
+                                                                <i class="fa-solid fa-question"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Player to join the lobby -->
+                                            <div class="lp-display-tj">
+                                                <img src="resources/img/question-mark.png" alt="pfp" id="lp-avatar-tj">
+                                                <div class="lp-aux-tj">
+                                                    <div class="lp-names-tj">
+                                                        <p id="lpn-user-tj">???</p>
+                                                        <p class="lpn-rank">???</p>
+                                                    </div>
+                                                    <div class="lp-rank-aux-tj">
+                                                        <p class="rank">RANK</p>
+                                                        <div class="lp-rank-tj">
+                                                            <div class="lpr-tj">
+                                                                <i class="fa-solid fa-question"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Player to join the lobby -->
+                                            <div class="lp-display-tj">
+                                                <img src="resources/img/question-mark.png" alt="pfp" id="lp-avatar-tj">
+                                                <div class="lp-aux-tj">
+                                                    <div class="lp-names-tj">
+                                                        <p id="lpn-user-tj">???</p>
+                                                        <p class="lpn-rank">???</p>
+                                                    </div>
+                                                    <div class="lp-rank-aux-tj">
+                                                        <p class="rank">RANK</p>
+                                                        <div class="lp-rank-tj">
+                                                            <div class="lpr-tj">
+                                                                <i class="fa-solid fa-question"></i>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                </div>
+                                <!-- Search lobby -->
+                                <div class="lobby-join">
+                                    <div class="lj-je">
+                                        <div class="lj-je-top uno"></div>
+                                        <p>Enter code:</p>
+                                        <div class="lj-search">
+                                            <input type="text" placeholder="#RYOFG">
+                                            <button><i class="fa-solid fa-magnifying-glass"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="lj-je">
+                                        <div class="lj-je-top dos"></div>
+                                        <p>Join!</p>
+                                        <div class="lj-wrapper sfx-btn">
+                                            <div class="ljw">
+                                                <i class="fa-solid fa-right-to-bracket"></i>
                                             </div>
                                         </div>
                                     </div>
@@ -259,16 +383,16 @@
                 <!-- SETTINGS & PAUSE MENU -->
                 <div class="gm-config" style="display: none;" id="config-pause"> <!--fondo -->
                     <div class="gmc-set">
-                        <div class="gmc-close" id="close-gmc"> <!--cambia aspecto si es pausa -->
+                        <div class="gmc-close sfx-btn-close" id="close-gmc"> <!--cambia aspecto si es pausa -->
                             <div class="gmc-x">x</div>
                         </div>
-                        <div class="gmc-resume" style="display: none;" id="resume-gmc">
+                        <div class="gmc-resume sfx-btn-close" style="display: none;" id="resume-gmc">
                             <div class="gmc-play"><i class="fa-solid fa-play"></i></div>
                         </div>
                         <div class="gmc-img">
                             <img src="resources/img/9.png" alt="spiral" id="spiral">
                             <img src="resources/img/10.png" alt="stars" id="stars">
-                            <img src="resources/img/7.png" alt="powow" id="powow">
+                            <!-- <img src="resources/img/7.png" alt="powow" id="powow"> -->
                             <img src="resources/img/8.png" alt="cinta" id="cinta">
                             <img src="resources/img/8.png" alt="cinta" id="cintados">
                         </div>
@@ -289,29 +413,31 @@
                                 <img src="resources/img/settings.png" alt="settings">
                             </div>
                             <div class="gmc-music-sound">
-                                <button id="music-btn"><i class="material-symbols-outlined">music_note</i></button>
-                                <button id="volume-btn"><i class="fa-solid fa-volume-high"></i></button>
+                                <button id="music-btn" class="sfx-btn"><i class="material-symbols-outlined">music_note</i></button>
+                                <button id="volume-btn" class="sfx-btn"><i class="fa-solid fa-volume-high"></i></button>
                             </div>
                             <div class="gmc-gamemode" id="gamemode-gmc">
-                                <div class="arrow" id="prev"><i class="fa-solid fa-caret-left"></i></div>
+                                <div class="arrow sfx-btn-click" id="prev"><i class="fa-solid fa-caret-left"></i></div>
                                 <div class="gmc-display" id="gm-dif">EASY</div>
-                                <div class="arrow" id="next"><i class="fa-solid fa-caret-right"></i></div>
+                                <div class="arrow sfx-btn-click" id="next"><i class="fa-solid fa-caret-right"></i></div>
                             </div>
-                            <div class="gmc-reload-wrapper" style="display: none;" id="reload-gmc"> <!-- se muestra solo en el menu de pausa -->
+                            <div class="gmc-reload-wrapper sfx-btn" style="display: none;" id="reload-gmc"> <!-- se muestra solo en el menu de pausa -->
                                 <div class="gmc-reload">
                                     <i class="fa-solid fa-rotate-right"></i>
                                 </div>
                             </div>
                             <div class="gmc-btns">
                                 <div class="gmc-save-wrapper" id="save-gmc">
-                                    <div class="gmc-save">
-                                        <span><i class="fa-solid fa-floppy-disk"></i></span>
+                                    <div class="gmc-save sfx-normal-btn">
+                                        <!-- <span class="save uno"><i class="fa-solid fa-floppy-disk"></i></span>
+                                        <span class="save dos"><i class="fa-solid fa-floppy-disk"></i></span> -->
                                         <span>SAVE</span>
                                     </div>
                                 </div>
                                 <a class="gmc-quit-wrapper" style="display: none;" id="quit-gmc" href="LOG.HTML">
-                                    <div class="gmc-quit">
-                                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                                    <div class="gmc-quit sfx-normal-btn">
+                                        <!-- <i class="fa-solid fa-arrow-right-from-bracket"></i> -->
+                                         <span>EXIT</span>
                                     </div>
                                 </a>
                             </div>
@@ -321,7 +447,7 @@
                 <!-- CREDITS -->
                 <div class="gm-credits" style="display: none;">
                     <div class="gmct-cdts">
-                        <div class="gmct-close">
+                        <div class="gmct-close sfx-btn-close">
                             <div class="gmct-x" id="close-gmct">x</div>
                         </div>
                         <div class="gmc-img">

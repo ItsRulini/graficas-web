@@ -1,3 +1,29 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Bungee&family=Pangolin&display=swap');
+@import url('https://fonts.cdnfonts.com/css/new-super-mario-font-u');
+
+/*variables*/
+:root {
+    --mcolor: rgb(255, 246, 227);
+    --scolor: #fff5a0;
+    --tcolor: #ffd9a0;
+
+    --fcolor: rgb(192, 199, 202);
+    --ffcolor: rgb(162, 244, 255);
+
+    --border-c: rgb(102, 45, 012);
+    --wcolor: rgb(226, 221, 213);
+
+    --cred:rgb(255, 66, 66);
+    --cgreen: rgb(175, 228, 106);
+    --cyellow: #ffd900;
+    --corange: #ffa600;
+
+    --paper: rgb(230, 226, 215);
+}
+*{
+    font-family: 'New Super Mario Font U', sans-serif;
+}
+
 body{
     overflow-x: hidden;
     overflow-y: hidden;
@@ -8,5 +34,283 @@ body{
     margin: 0;
     padding: 0;
     overscroll-behavior: none;
+}
+.gm-config{
+    background-color: rgba(0, 0, 0, 0.3);
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2;
+}
+.gmc-set{
+    background-color: rgb(240, 237, 233);
+    display: flex;
+
+    position: relative;
+    box-shadow: 
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1500 - 360))), 15px)
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1500 - 360))), 15px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+    transform: rotate(2deg);
+
+    border-radius: clamp(3px, calc(3px + (8 - 3) * ((100vw - 360px) / (1500 - 360))), 8px);
+}
+.gmc-resume{
+    position: absolute;
+    top: 0; /* fijo al borde superior del contenedor */
+    left: 50%;
+    transform: translate(-50%, -60%); /* lo sube justo por encima */
+    background-color: var(--border-c);
+    clip-path: polygon(
+        50% 0%,  
+        100% 25%,
+        100% 75%, 
+        50% 100%,
+        0% 75%,  
+        0% 25%   
+    );
+    width: clamp(20px, calc(20px + (100 - 20) * ((100vw - 360px) / (1200 - 360))), 100px);
+    aspect-ratio: 1/1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+}
+.gmc-play{
+    font-size: clamp(12px, calc(12px + (45 - 12) * ((100vw - 360px) / (1200 - 360))), 45px);
+    width: 88%;
+    height: 88%;
+    background-color: var(--cgreen);
+    color: white;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    clip-path: polygon(
+        50% 0%,  
+        100% 25%,
+        100% 75%, 
+        50% 100%,
+        0% 75%,   
+        0% 25%  
+    );
+}
+.gmc-left{
+    border-right: 2px solid red;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(5px, 1vw, 10px);
+}
+.gmc-img{
+    z-index: 2;
+}
+/*              ----- IMAGENES -------                */
+#stars, #spiral, #powow, #cinta, #cintados{
+    position: absolute;
+    aspect-ratio: 1/1;
+}
+#spiral{
+    left: 13%;
+    bottom: 45%;
+    transform: translate(-20%, 50%);
+    width: clamp(40px, calc(40px + (120 - 40) * ((100vw - 360px) / (1200 - 360))), 120px);
+}
+#stars{
+    right: 0;
+    bottom: 30%;
+    width: clamp(50px, calc(50px + (160 - 50) * ((100vw - 360px) / (1200 - 360))), 160px);
+}
+#powow{
+    top: 0; /* fijo al borde superior del contenedor */
+    left: 100%;
+    transform: translate(-40%, -60%); /* lo sube justo por encima */
+    width: clamp(40px, calc(40px + (230 - 40) * ((100vw - 360px) / (1380 - 360))), 230px);
+}
+#cinta{
+    top: 0; /* fijo al borde superior del contenedor */
+    right: 100%;
+    transform: translate(80%, -40%) rotate(-25deg); /* lo sube justo por encima */
+    width: clamp(60px, calc(60px + (170 - 60) * ((100vw - 360px) / (1200 - 360))), 170px);
+    object-fit: contain;
+}
+#cintados{
+    bottom: 0; /* fijo al borde superior del contenedor */
+    left: 100%;
+    transform: translate(-65%, 38%) rotate(-20deg); /* lo sube justo por encima */
+    width: clamp(60px, calc(60px + (170 - 60) * ((100vw - 360px) / (1200 - 360))), 170px);
+    object-fit: contain;
+}
+/*      -------------------------------------------------------------------------         */
+.gmc-page{
+    width: clamp(8px, calc(8px + (25 - 8) * ((100vw - 360px) / (1500 - 360))), 25px);
+
+    aspect-ratio: 1/1;
+    border-radius: 100%;
+    position: relative;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1500 - 360))), 3px) solid black;
+}
+.gmc-page.uno,
+.gmc-page.dos{
+    background-color: rgb(164, 137, 002);
+}
+.gmc-page.tres,
+.gmc-page.cuatro{
+    background-color: rgb(158, 156, 154);
+}
+.gmc-page.cinco{
+    background-color: rgb(100, 141, 046);
+}
+.gmc-set-aux{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1200 - 360))), 10px);
+    padding: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1200 - 360))), 10px);
+
+    background: repeating-linear-gradient(
+        180deg,       
+        var(--fcolor) 0,    
+        var(--fcolor) 2px,   
+        transparent 2px,
+        transparent clamp(15px, calc(15px + (40 - 15) * ((100vw - 360px) / (1500 - 360))), 40px) /* espacio entre líneas */
+    );
+}
+.gmc-set-h{
+    height: clamp(30px, 8vw, 120px);
+}
+.gmc-set-h img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.gmc-set-h,
+.gmc-music-sound,
+.gmc-btns{
+    z-index: 5;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(2px, calc(2px + (30 - 2) * ((100vw - 360px) / (1200 - 360))), 30px);
+}
+.gmc-music-sound button
+{
+    background-color: white;
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1200 - 360))), 10px);
+    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1500 - 360))), 3px) solid black;
+}
+.gmc-music-sound button{
+    box-shadow: 
+    clamp(1px, calc(1px + (5 - 1) * ((100vw - 360px) / (1200 - 360))), 5px)
+    clamp(1px, calc(1px + (5 - 1) * ((100vw - 360px) / (1200 - 360))), 5px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+    transition: all .3s ease;
+    font-size: clamp(8px, calc(8px + (40 - 8) * ((100vw - 360px) / (1200 - 360))), 40px);
+    /*20px lo minimo    /   80(lo maximo) - 20(lo minimo)   /   
+    100vw menos lo minimo de la pantalla q es 360px     /   
+    "maximo" de la pantalla 1200px*/
+    width: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1200 - 360))), 80px);
+    aspect-ratio: 1/1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.gmc-music-sound button i {
+    font-size: inherit; /*utiliza el tamaño de fuente correcto q es 40px*/
+}
+.gmc-reload-wrapper{
+    background-color: white;
+    clip-path: polygon(
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
+    );
+
+    font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1200 - 360))), 80px);
+    width: clamp(30px, calc(30px + (150 - 30) * ((100vw - 360px) / (1200 - 360))), 150px);
+    aspect-ratio: 1/1;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    transition: all .3s ease;
+    z-index: 5;
+}
+.gmc-reload{
+    background-color: var(--cgreen);
+    border-radius: 100%;
+    height: 88%;
+    width: 88%;
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.gmc-quit-wrapper,
+.gmc-quit{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+
+    font-size: clamp(8px, calc(8px + (32 - 8) * ((100vw - 360px) / (1500 - 360))), 32px);
+    gap: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px);;
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+
+    transition: transform .3s ease;
+    text-decoration: none;
+
+    color: white;
+}
+.gmc-quit-wrapper{
+    background: white; /* verde */
+    box-shadow: 
+    0
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(30, 30, 39, 0.726);
+
+    height: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);  
+    width: clamp(40px, calc(40px + (180 - 40) * ((100vw - 360px) / (1500 - 360))), 180px);
+}
+.gmc-quit{
+    width: 90%;
+    height: 79%;
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    background: var(--cred);
+}
+.arrow,
+.gmc-music-sound button{
+    cursor: pointer;
+}
+/*          ------ HOVERS -------             */
+.gmc-quit-wrapper:hover,
+#music-btn:hover, 
+#volume-btn:hover,
+.gmc-reload-wrapper:hover{
+    transform: scale(1.5);
+    cursor: pointer;
+    z-index: 10;
 }
 

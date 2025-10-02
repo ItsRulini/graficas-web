@@ -1,13 +1,19 @@
 export class Menu {
     constructor() {
         this.isPlaying = localStorage.getItem("isPlaying") ?? true;
+        this.sfxEnabled = (localStorage.getItem("sfxEnabled") ?? "true") === "true";
 
         this.init();
         this.bindEvents();
         this.GSAP();
-        this.togglePauseMenu(false);
+
         this.musicToogle(this.isPlaying); // Iniciar sin música
+        this.updateSFXButton();
+
         this.showLevel(this.currentLevelIndex); //seleccionar nivel
+
+        this.initImageSelector(); //seleccionar imagen de jugador
+        this.loadFromLocalStorage(); //cargar el local storage para el jugador seleccionado
     }
 
 
@@ -43,6 +49,11 @@ export class Menu {
         this.host = document.getElementById('hlobby'); //crear sala
         this.closeLobby = document.getElementById('close-gml');
 
+        // Joing Lobby
+        this.joinLobby = document.getElementById('join-lob');
+        this.join = document.getElementById('jlobby'); //crear sala
+        this.closeJoin = document.getElementById('close-gmcj');
+
         // Logout
         this.logout = document.getElementById('gmo-exit');
 
@@ -58,16 +69,8 @@ export class Menu {
         this.musicBtn = document.getElementById("music-btn");
         this.volumeBtn = document.getElementById("volume-btn");
 
-        const icon = this.musicBtn.querySelector("i");
-
-        // abrir/cerrar el menu de pausa con la tecla P o manualmente
-        this.pauseMenu = document.getElementById("config-pause"); 
-        this.settingsImg = document.querySelector(".gmc-set-h img");
-        this.resumeBtn = document.getElementById("resume-gmc");
+        //Cerrar settings
         this.closeBtn = document.getElementById("close-gmc");
-        this.gameMode = document.getElementById("gamemode-gmc");
-        this.quitBtn = document.getElementById("quit-gmc");
-        this.reloadBtn = document.getElementById("reload-gmc");
 
         // Nombre de usuario
         this.username = document.getElementById("username");
@@ -91,6 +94,25 @@ export class Menu {
         // Música de fondo
         this.backgroundMusic = document.getElementById("background-music");
         this.backgroundMusic.volume = 0.5;
+
+        //SFX botones
+        this.hoverSound = new Audio("resources/audio/sfx/hover_sfx.m4a"); 
+        this.hoverSound.volume = 1;
+
+        //SFX Abrir
+        this.hoverOpen = new Audio("resources/audio/sfx/open_sfx.m4a"); 
+        this.hoverOpen.volume = 1;
+
+        //SFX Cerrar
+        this.hoverClose = new Audio("resources/audio/sfx/close_sfx.m4a"); 
+        this.hoverClose.volume = 1;
+
+        //BOTONES SFX
+        this.sfxBTNS = document.querySelectorAll(".sfx-btn"); //para hover
+        this.sfxBTNSNormal = document.querySelectorAll(".sfx-normal-btn"); //para hover
+
+        this.sfxBTNSClick = document.querySelectorAll(".sfx-btn-click"); //para click
+        this.sfxBTNSClickClose = document.querySelectorAll(".sfx-btn-close"); //para cerrar con un click
 
         //Seleccionar el nivel
         this.levels = document.querySelectorAll(".lc-level"); // todos los niveles
@@ -128,7 +150,19 @@ export class Menu {
         this.PlayerBtn = document.querySelector(".gm-btn-display");
         this.PlayerBar = document.getElementById("gd-player");
 
+        //IDs pfp de personajes
+        this.ness = document.getElementById('ness');
+        this.yoshi = document.getElementById('yoshi');
+        this.isabelle = document.getElementById('isabelle');
+        this.bomberman = document.getElementById('bomberman');
+        this.displayIMG = document.getElementById('avatar');
+
+        this.playerOPT = document.querySelectorAll('.gdu-select img');
+
+        this.lsPLAYER = localStorage.getItem("selectedPLY"); //localstorage player
+
     }
+
     bindEvents() {
 
         // // Iniciar juego
@@ -145,18 +179,23 @@ export class Menu {
         this.wrappersEffects.forEach(wrapper => {
             wrapper.addEventListener('mouseenter', () => {
                 this.wrappersEffects.forEach(w => {
+
+                    this.playHoverSFX(); //sfx
+                    this.hoverSound.currentTime = 0; //reiniciar
+
                     const inner = w.querySelector('div');
                     const as = w.querySelectorAll('a');
                     const spans = w.querySelectorAll('span');
-
                     if (w !== wrapper) {
-                        inner.style.opacity = '0.5';
                         as.forEach(span => span.style.filter = '.5');
+                        w.style.filter = 'brightness(0.4)'; 
                     } else {
                         inner.style.opacity = '1';
                         spans.forEach(span => span.style.filter = 'none');
                         spans.forEach(span => span.style.color = 'white');
-                        inner.style.background = '#ffd900';
+                        w.style.filter = 'brightness(1)'; 
+                        w.style.background = '#ffd900';
+                        inner.style.boxShadow = "none";
                     }
                 });
             });
@@ -168,7 +207,38 @@ export class Menu {
                     inner.style.opacity = '';
                     inner.style.background = '';
                     spans.forEach(span => span.style.color = '');
+                    w.style.filter = 'brightness(1)'; 
+                    w.style.background = '';
+                    inner.style.boxShadow = "";
                 });
+            });
+        });
+
+        //hover sobre otros botones
+        this.sfxBTNS.forEach(boton => {
+             boton.addEventListener("mouseenter", () => {
+                this.playOpenSFX();
+                this.hoverOpen.currentTime = 0;
+            });
+        });
+        //hover sobre otros botones
+        this.sfxBTNSNormal.forEach(botonnormal => {
+             botonnormal.addEventListener("mouseenter", () => {
+                this.playHoverSFX();
+                this.hoverSound.currentTime = 0;
+            });
+        });
+        //click sobre otros botones
+        this.sfxBTNSClick.forEach(botonclick => {
+             botonclick.addEventListener("click", () => {
+                this.playOpenSFX();
+                this.hoverOpen.currentTime = 0;
+            });
+        });
+        //click para cerrar
+        this.sfxBTNSClickClose.forEach(botonclickclose => {
+             botonclickclose.addEventListener("click", () => {
+                this.playCloseSFX();
             });
         });
 
@@ -219,7 +289,22 @@ export class Menu {
 
         // Abrir barra derecha del jugador
         this.PlayerBtn.addEventListener('click', () => {
-            this.PlayerBar.classList.toggle('active');
+            const isActive = this.PlayerBar.classList.toggle('active');
+            if (isActive) {
+                this.playOpenSFX();
+            } else {
+                this.playCloseSFX();
+            }
+        });
+
+        //abrir ventana para unirse
+        this.joinLobby.addEventListener('click', () => {
+            this.join.style.display = 'flex';
+            this.playOPT.style.display = 'none';
+        });
+        this.closeJoin.addEventListener('click', () => {
+            this.join.style.display = 'none';
+            this.playOPT.style.display = 'block';
         });
 
 
@@ -278,34 +363,22 @@ export class Menu {
             this.musicToogle(this.isPlaying);
         });
 
-        this.volumeBtn.addEventListener("click", () => {
-            const icon = this.volumeBtn.querySelector("i");
-            this.volumeBtn.classList.toggle("active");
-            if (this.volumeBtn.classList.contains("active")) {
-                icon.classList.remove("fa-volume-high");
-                icon.classList.add("fa-volume-xmark");
-                this.volumeBtn.style.background = "rgb(255, 66, 66)";
-            } else {
-                icon.classList.remove("fa-volume-xmark");
-                icon.classList.add("fa-volume-high");
-                this.volumeBtn.style.background = "";
-            }
-        });
+       this.volumeBtn.addEventListener("click", () => this.sfxToggle());
 
         // ABRIR/CERRAR EL MANEU DE PAUSA CON LA TECLA P o MANUALMENTE
-        document.addEventListener("keydown", (e) => {
-            if (e.key.toLowerCase() === "p") {
-                const isHidden = this.pauseMenu.style.display === "none" || this.pauseMenu.style.display === "";
-                this.togglePauseMenu(isHidden);
-            }
-        });
+        // document.addEventListener("keydown", (e) => {
+        //     if (e.key.toLowerCase() === "p") {
+        //         const isHidden = this.pauseMenu.style.display === "none" || this.pauseMenu.style.display === "";
+        //         this.togglePauseMenu(isHidden);
+        //     }
+        // });
 
-        // Cerrar manualmente (resume o close)
-        [this.resumeBtn, this.closeBtn].forEach(btn => {
-            btn.addEventListener("click", () => {
-                this.togglePauseMenu(false);
-            });
-        });
+        // // Cerrar manualmente (resume o close)
+        // [this.resumeBtn, this.closeBtn].forEach(btn => {
+        //     btn.addEventListener("click", () => {
+        //         this.togglePauseMenu(false);
+        //     });
+        // });
 
         // // Cambiar el nombre de colores
         // Object.keys(this.colors).forEach(id => {
@@ -347,6 +420,7 @@ export class Menu {
             this.showLevel(this.currentLevelIndex);
         });
     }
+
     showLevel(index) {
         this.levels.forEach((level, i) => {
             level.style.display = i === index ? "inline-flex" : "none";
@@ -357,8 +431,6 @@ export class Menu {
             this.levelDesc.textContent = this.levelData[index].desc;
         }
     }
-
-    
 
     GSAP() {
         gsap.from('.gmo-start-wrapper', {
@@ -382,26 +454,7 @@ export class Menu {
             y: 100
         });
     }
-    togglePauseMenu(open) {
-        if (open) {
-            this.pauseMenu.style.display = "inline-flex";
-            this.settingsImg.src = "resources/img/pause.png";
-            this.resumeBtn.style.display = "inline-flex";
-            this.closeBtn.style.display = "none";
-            this.gameMode.style.display = "none";
-            this.reloadBtn.style.display = "inline-flex";
-            this.quitBtn.style.display = "inline-flex";
-        } else {
-            this.pauseMenu.style.display = "none";
-            this.settingsImg.src = "resources/img/settings.png";
-            this.resumeBtn.style.display = "none";
-            this.closeBtn.style.display = "inline-flex";
-            this.gameMode.style.display = "inline-flex";
-            this.reloadBtn.style.display = "none";
-            this.quitBtn.style.display = "none";
-        }
-    }
-
+    //Funciones para la música y efectos de sonido
     async manageMusic(play) {
 
         if (!this.backgroundMusic) return;
@@ -413,6 +466,39 @@ export class Menu {
             this.backgroundMusic.play().catch((error) => {
                 console.error("Error al reproducir la música:", error);
             });
+        }
+    }
+    async playHoverSFX() {
+        if (!this.sfxEnabled) return; // no hacer nada si está muteado
+        try {
+            this.hoverSound.currentTime = 0; 
+            await this.hoverSound.play();
+        } catch (err) {
+            if (err.name !== "AbortError") {
+                console.warn("Error al reproducir SFX:", err);
+            }
+        }
+    }
+    async playOpenSFX() {
+        if (!this.sfxEnabled) return; // no hacer nada si está muteado
+        try {
+            this.hoverOpen.currentTime = 0; 
+            await this.hoverOpen.play();
+        } catch (err) {
+            if (err.name !== "AbortError") {
+                console.warn("Error al reproducir SFX:", err);
+            }
+        }
+    }
+    async playCloseSFX() {
+        if (!this.sfxEnabled) return; // no hacer nada si está muteado
+        try {
+            this.hoverClose.currentTime = 0; 
+            await this.hoverClose.play();
+        } catch (err) {
+            if (err.name !== "AbortError") {
+                console.warn("Error al reproducir SFX:", err);
+            }
         }
     }
 
@@ -432,13 +518,53 @@ export class Menu {
             // Reanudar música
             this.isPlaying = true;
         }
-
         this.manageMusic(this.isPlaying);
     }
 
-    
-}
+    updateSFXButton() {
+        const icon = this.volumeBtn.querySelector("i");
+        if (!icon) return;
 
+        if (this.sfxEnabled) {
+            icon.className = "fa-solid fa-volume-high"; // 
+            this.volumeBtn.style.background = "";
+        } else {
+            icon.className = "fa-solid fa-volume-xmark"; // 
+            this.volumeBtn.style.background = "rgb(255, 66, 66)";
+        }
+    }
+    sfxToggle() {
+        const icon = this.volumeBtn.querySelector("i");
+        this.sfxEnabled = !this.sfxEnabled;
+
+        console.log("switch");
+        localStorage.setItem("sfxEnabled", this.sfxEnabled);
+
+        this.updateSFXButton();
+    }
+
+    //Cambiar imagen de personaje seleccionado
+    changePLAYER(lsPLAYER) {
+        this.displayIMG.src = lsPLAYER;
+    }
+    initImageSelector() {
+        this.playerOPT.forEach(option => {
+            option.addEventListener('click', () => {
+                this.changePLAYER(option.src);
+                
+                localStorage.setItem("selectedPLY", option.src); // !    LOCAL storage   !
+                localStorage.setItem("PlayerName", option.id); //guardar id
+            });
+        });
+    }
+    //Cargar LS
+    loadFromLocalStorage() {
+    const saved = localStorage.getItem("selectedPLY");
+    if (saved) {
+        this.changePLAYER(saved);
+    }
+}
+}
 document.addEventListener('DOMContentLoaded', () => {
     window.menu = new Menu();
 });

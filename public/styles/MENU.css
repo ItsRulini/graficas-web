@@ -7,10 +7,10 @@
     --scolor: #fff5a0;
     --tcolor: #ffd9a0;
 
-    --fcolor: rgb(74, 169, 212);
+    --fcolor: rgb(192, 199, 202);
     --ffcolor: rgb(162, 244, 255);
 
-    --border-c: rgb(90, 67, 37);
+    --border-c: rgb(102, 45, 012);
     --wcolor: rgb(226, 221, 213);
 
     --cred:rgb(255, 66, 66);
@@ -92,8 +92,8 @@ body{
 .gm-btn-display{
     background-color: white;
     position: absolute;
-    top: 5px;
-    left: 5px;
+    top: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    left: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
 
     width: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
     aspect-ratio: 1/1;
@@ -106,6 +106,11 @@ body{
 
     border: none;
     cursor: pointer;
+    z-index: 1;
+
+    border: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid;
+    border-color: var(--border-c);
+    color: var(--border-c);
 }
 
 .gm-opt{
@@ -133,130 +138,100 @@ body{
 .gmo-exit-wrapper,
 .gmo-credits-wrapper{
     cursor: pointer;
-    background-color: black;
-    height: 8%;
+    
+    background-color: white;
+    height: 10%;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-bottom: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1200 - 360))), 10px);
+    margin-bottom: clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1500 - 360))), 15px);
     text-decoration: none;
+
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    /* border: clamp(1px, calc(1px + (5 - 1) * ((100vw - 360px) / (1500 - 360))), 5px)
+    solid var(--border-c); */
+
+    box-shadow: 
+    0
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(30, 30, 39, 0.726);
+
+    position: relative;
 }
-.gmo-start-wrapper{ /*medidas independientes*/
-    width: 45%;
-    clip-path: polygon(
-        95% 0%, 5% 15%, 0% 20%, 3% 90%,
-        30% 120%, 90% 85%, 97% 80%, 100% 20%
-    );
-}
-.gmo-config-wrapper{
-    width: 70%;
-    clip-path: polygon(
-        0% 10%,       
-        10% 5%,      
-        90% 10%,    
-        100% 50%,   
-        85% 110%,    
-        50% 120%,   
-        15% 100%,   
-        0% 40%      
-    );
-}
+.gmo-start-wrapper,
 .gmo-exit-wrapper{
-    width: 30%;
-    clip-path: polygon(
-        0% 10%,     
-        15% 0%,     
-        85% 5%,   
-        100% 25%,   
-        90% 100%, 
-        60% 120%,
-        20% 110%,  
-        0% 80%   
-    );
+    width: 35%;
 }
+.gmo-config-wrapper,
 .gmo-credits-wrapper{
-    width: 40%;
-    clip-path: polygon(
-        0% 20%,    
-        10% 0%,   
-        80% 10%,   
-        100% 40%,  
-        90% 100%,  
-        60% 120%,  
-        20% 90%,  
-        0% 60%    
-    );
+    width: 50%;
 }
-.gmo-start{
-    background-color: var(--cgreen);
-    font-size: clamp(5px, 2vw, 1.7rem);
-    width: 96%;
-    height: 86%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+.gmo-start,
 .gmo-exit{
-    background-color: var(--cred);
-    font-size: clamp(5px, 2vw, 1.7rem);
-    width: 96%;
-    height: 86%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width: 90%;
+    height: 79%;
     color: white;
 }
 .gmo-config,
 .gmo-credits{
-    background-color: white;
-    font-size: clamp(5px, 2vw, 1.7rem);
-    width: 96%;
-    height: 86%;
+    width: 92%;
+    height: 79%;
+    color: black;
+}
+.gmo-start,
+.gmo-exit,
+.gmo-config,
+.gmo-credits{
     display: flex;
     justify-content: center;
     align-items: center;
+
+    font-size: clamp(6px, calc(6px + (30 - 6) * ((100vw - 360px) / (1500 - 360))), 30px);
+    border-radius: clamp(8px, calc(8px + (30 - 8) * ((100vw - 360px) / (1500 - 360))), 30px);
+    gap: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px);;
+    /* border: clamp(1px, calc(1px + (5 - 1) * ((100vw - 360px) / (1500 - 360))), 5px) 
+    solid white; */
+
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    
 }
 .gmo-start{
-    clip-path: polygon(
-        95% 0%, 5% 15%, 0% 20%, 3% 90%,
-        30% 120%, 90% 85%, 97% 80%, 100% 20%
-    );
-}
-.gmo-config{
-    clip-path: polygon(
-        0% 10%,       
-        10% 5%,      
-        90% 10%,     
-        100% 50%,    
-        85% 110%,    
-        50% 120%,    
-        15% 100%,    
-        0% 40%       
-    );
+    background-color: var(--cgreen); 
 }
 .gmo-exit{
-    clip-path: polygon(
-        0% 10%,     
-        15% 0%,     
-        85% 5%,     
-        100% 25%,   
-        90% 100%,   
-        60% 120%,   
-        20% 110%,  
-        0% 80%    
-    );
+    background-color: var(--cred);
+    color: white;
 }
+.gmo-config,
 .gmo-credits{
-    clip-path: polygon(
-        0% 20%,     
-        10% 0%,   
-        80% 10%,    
-        100% 40%, 
-        90% 100%,  
-        60% 120%,  
-        20% 90%,   
-        0% 60% 
-    );
+    background-color: var(--wcolor);
+    color: rgba(30, 30, 39, 0.726);
+}
+.gmo-i.dos{
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    transform: translateY(-50%) rotate(-10deg);
+    font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1500 - 360))), 80px);
+    color: var(--cred);
+    -webkit-text-stroke: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px) 
+    var(--cred);
+}
+.gmo-i.uno{
+    width: clamp(20px, calc(20px + (110 - 20) * ((100vw - 360px) / (1500 - 360))), 110px);
+    position: absolute;
+    top: 60%;
+    left: -20%;
+    transform: translateY(-60%) rotate(-10deg);
+}
+.gmo-i.tres{
+    position: absolute;
+    top: 50%;
+    left: -10%;
+    transform: translateY(-50%) rotate(-10deg);
+    font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1500 - 360))), 80px);
+    color: white;
 }
 
 /*      CONFIG      */
@@ -272,6 +247,7 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
+    z-index: 2;
 }
 .gm-start{
     flex-direction: column;
@@ -279,25 +255,25 @@ body{
 .gmc-set,
 .gmct-cdts,
 .gmp-p{
-    background-color: white; /*var(--paper)*/
+    background-color: rgb(240, 237, 233); /*var(--paper)*/
     display: flex;
 
     position: relative;
     box-shadow: 
-    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
-    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1200 - 360))), 15px)
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1500 - 360))), 15px)
+    clamp(3px, calc(3px + (15 - 3) * ((100vw - 360px) / (1500 - 360))), 15px)
     0px
     0px rgba(0, 0, 0, 0.5);
     transform: rotate(2deg);
 
-    border-radius: 8px;
+    border-radius: clamp(3px, calc(3px + (8 - 3) * ((100vw - 360px) / (1500 - 360))), 8px);
 }
 .gmc-resume{
     position: absolute;
     top: 0; /* fijo al borde superior del contenedor */
     left: 50%;
     transform: translate(-50%, -60%); /* lo sube justo por encima */
-    background-color: black;
+    background-color: var(--border-c);
     clip-path: polygon(
         50% 0%,  
         100% 25%,
@@ -341,7 +317,7 @@ body{
     top: 0; /* fijo al borde superior del contenedor */
     left: 50%;
     transform: translate(-50%, -60%); /* lo sube justo por encima */
-    background-color: black;
+    background-color: var(--border-c);
     clip-path: polygon(
         50% 0%,  
         100% 25%,
@@ -390,11 +366,11 @@ body{
 .gmc-page,
 .gmc-gamemode,
 .gmc-music-sound button{
-    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1200 - 360))), 3px) solid black;
+    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1500 - 360))), 3px) solid black;
 }
 
 .gmc-page{
-    width: clamp(12px, 2vw, 25px);
+    width: clamp(8px, calc(8px + (25 - 8) * ((100vw - 360px) / (1500 - 360))), 25px);
 
     aspect-ratio: 1/1;
     border-radius: 100%;
@@ -437,7 +413,7 @@ body{
         var(--fcolor) 0,    
         var(--fcolor) 2px,   
         transparent 2px,
-        transparent 40px /* espacio entre líneas */
+        transparent clamp(15px, calc(15px + (40 - 15) * ((100vw - 360px) / (1500 - 360))), 40px) /* espacio entre líneas */
     );
 }
 .gmc-set-h,
@@ -495,18 +471,20 @@ body{
     padding: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1200 - 360))), 10px);
 }
 .gmc-reload-wrapper{
-    background-color: black;
+    background-color: white;
     clip-path: polygon(
-        40% 0%,  
-        100% 15%,
-        95% 70%, 
-        60% 100%,
-        10% 85%,   
-        0% 30%  
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
     );
 
     font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1200 - 360))), 80px);
-    width: clamp(20px, calc(20px + (150 - 20) * ((100vw - 360px) / (1200 - 360))), 150px);
+    width: clamp(30px, calc(30px + (150 - 30) * ((100vw - 360px) / (1200 - 360))), 150px);
     aspect-ratio: 1/1;
 
     display: flex;
@@ -519,17 +497,11 @@ body{
 }
 .gmc-reload{
     background-color: var(--cgreen);
-    clip-path: polygon(
-        40% 0%,  
-        100% 15%,
-        95% 70%, 
-        60% 100%,
-        10% 85%,   
-        0% 30%  
-    );
-    height: 92%;
-    width: 92%;
-    
+    border-radius: 100%;
+    height: 88%;
+    width: 88%;
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -542,64 +514,70 @@ body{
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    font-size: clamp(8px, calc(8px + (40 - 8) * ((100vw - 360px) / (1200 - 360))), 40px);
-    transition: all .3s ease;
+    font-size: clamp(8px, calc(8px + (32 - 8) * ((100vw - 360px) / (1500 - 360))), 32px);
+    transition: transform .3s ease;
+    gap: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px);;
     text-decoration: none;
 }
 .gmc-save-wrapper{
-    width: clamp(40px, calc(40px + (180 - 40) * ((100vw - 360px) / (1200 - 360))), 180px);
-    height: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1200 - 360))), 80px);
-    background: black; /* verde */
-    font-weight: bold;
-    clip-path: polygon(
-        15% 5%,   
-        85% 10%,  
-        100% 25%,  
-        90% 95%,  
-        10% 90%,  
-        0% 50%    
-    );
+    width: clamp(40px, calc(40px + (200 - 40) * ((100vw - 360px) / (1500 - 360))), 200px);
+    height: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);
+    background: white; /* verde */
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    box-shadow: 
+    0
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(30, 30, 39, 0.726);
 }
+
 .gmc-quit-wrapper{
-    width: clamp(40px, calc(40px + (180 - 40) * ((100vw - 360px) / (1200 - 360))), 180px);
-    height: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1200 - 360))), 80px);
-    background: black; /* rojo */
-    font-weight: bold;
+    width: clamp(40px, calc(40px + (180 - 40) * ((100vw - 360px) / (1500 - 360))), 180px);
+    height: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);
+    background: white; /* rojo */
     color: white;
-    clip-path: polygon(
-        15% 10%, 
-        90% 5%,   
-        100% 40%, 
-        80% 90%, 
-        10% 95%,  
-        0% 50%    
-    );
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    box-shadow: 
+    0
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(30, 30, 39, 0.726);
 }
 .gmc-save{
-    width: 94%;
-    height: 88%;
+    width: 90%;
+    height: 79%;
     background-color: var(--cgreen);
-    clip-path: polygon(
-        15% 5%,    
-        85% 10%,  
-        100% 25%, 
-        90% 95%,  
-        10% 90%,  
-        0% 50%   
-    );
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
+    position: relative;
+}
+.save.uno{
+    position: absolute;
+    top: 50%;
+    left: -20%;
+    transform: translateY(-50%) rotate(-10deg);
+    font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1500 - 360))), 80px);
+    color: red;
+    -webkit-text-stroke: clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px) 
+    var(--border-c);
+}
+.save.dos{
+    position: absolute;
+    top: 50%;
+    left: -20%;
+    transform: translateY(-50%) rotate(-10deg);
+    font-size: clamp(12px, calc(12px + (80 - 12) * ((100vw - 360px) / (1500 - 360))), 80px);
+    color: var(--cgreen);
 }
 .gmc-quit{
-    width: 94%;
-    height: 88%;
+    width: 90%;
+    height: 79%;
     background: var(--cred); /* rojo */
-    clip-path: polygon(
-        15% 10%,  
-        90% 5%,  
-        100% 40%, 
-        80% 90%,   
-        10% 95%,  
-        0% 50%   
-    );
+    border-radius: clamp(10px, calc(10px + (40 - 10) * ((100vw - 360px) / (1500 - 360))), 40px);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
+    position: relative;
 }
 .gmc-img{
     z-index: 2;
@@ -676,6 +654,7 @@ body{
 .gmc-reload-wrapper:hover{
     transform: scale(1.5);
     cursor: pointer;
+    z-index: 10;
 }
 
 /*      USUARIO     */
@@ -689,8 +668,8 @@ body{
     border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
 
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    left: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
     display: none;
 
     box-shadow: 
@@ -739,6 +718,11 @@ body{
     height: 100%;
     padding: clamp(6px, calc(6px + (30 - 6) * ((100vw - 360px) / (1500 - 360))), 30px)
              clamp(4px, calc(4px + (10 - 4) * ((100vw - 360px) / (1500 - 360))), 10px);
+
+    border-radius: 0
+               clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px)
+               clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px)
+               0;
 }
 .gd-circle{
     position: absolute;
@@ -748,8 +732,36 @@ body{
     border-radius: 100%;
     width: clamp(8px, calc(8px + (30 - 8) * ((100vw - 360px) / (1500 - 360))), 30px);
     aspect-ratio: 1/1;
-    background-color: rgb(052, 141, 232);
+    background-color: white;
     border: clamp(1px, calc(1px + (4 - 1) * ((100vw - 360px) / (1500 - 360))), 4px) solid var(--border-c);
+}
+.gd-user{
+    transition: transform .3s ease;
+    position: relative;
+    display: inline-block;
+}
+.gdu-select{
+    display: none;
+    background-color: var(--cred);
+    position: absolute;
+    padding: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px);
+    gap: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px);
+    justify-content: center;  
+    align-items: center;
+    grid-template-columns: repeat(2, 1fr);
+}
+.gdu-select img{
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 100%;
+    padding: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px);
+    background-color: white;
+}
+.gd-user:hover .gdu-select {display: grid;}
+
+.gd-user:hover{
+    cursor: pointer;
+    transform: scale(1.2);
 }
 .gdd-img{
     position: relative;
@@ -873,10 +885,11 @@ body{
 
 
 .gms-aux{
-    /* background-color: pink; */
     display: flex;
     flex-direction: column;
     justify-content: center;
+
+    position: relative;
 }
 /*creacion de partida*/
 .gms-st{
@@ -892,6 +905,7 @@ body{
     gap: clamp(5px, calc(5px + (20 - 5) * ((100vw - 360px) / (1500 - 360))), 20px);
     border: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
     border-radius: 0px 0px 10px 10px;
+    z-index: 3;
 }
 .gms-stf{
     background-color: var(--wcolor);;
@@ -904,9 +918,22 @@ body{
     border-top: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
 
     border-bottom: none;
+    z-index: 2;
+}
+.gms-stp{
+    position: absolute;
+    background-color: white;
+    z-index: 2;
+    height: clamp(30px, calc(30px + (150 - 30) * ((100vw - 360px) / (1500 - 360))), 150px);
+    width: 70%;
+    top: 5%;
+    left: 5%;
+    transform: rotate(3deg) ;
+    border: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px) solid var(--border-c);
 }
 .gms-back,
-.gml-back{
+.gml-back,
+.gmcj-back{
     position: absolute;
     top: 0; /* fijo al borde superior del contenedor */
     right: 0%;
@@ -931,7 +958,8 @@ body{
     transition: transform .3s ease;
 }
 .gms-x,
-.gml-x{
+.gml-x,
+.gmcj-x{
     width: 85%;
     height: 85%;
     background-color: var(--cred);
@@ -1164,10 +1192,6 @@ body{
 
     position: relative;
 }
-.lobby-imgs{
-    
-    
-}
 .star.uno{
     position: absolute;
     z-index: 5;
@@ -1257,7 +1281,7 @@ body{
     display: flex;
     flex-direction: column;
     align-items: start;   /* centra los bloques dentro del contenedor */
-    gap: -20px;            /* ❌ no existe gap negativo, así que haremos overlay con margin */
+    gap: -20px;            /* no existe gap negativo, overlay con margin */
     position: relative;
     padding-top: 5%;
 }
@@ -1269,7 +1293,7 @@ body{
     font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
 }
 .level-d{
-    background-color: var(--cyellow);
+    background-color: var(--cgreen);
     width: 100%;
     padding: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
     border-radius: clamp(5px, calc(5px + (30 - 5) * ((100vw - 360px) / (1500 - 360))), 30px);
@@ -1395,7 +1419,7 @@ body{
     transform: translateY(30%) rotate(5deg);
     z-index: 2;           /* encima del primero */
 
-    background: var(--corange);
+    background: var(--cgreen);
 }
 .lc-code input{
     width: 90%;
@@ -1425,7 +1449,7 @@ body{
     background-color: rgb(243, 234, 156);
 }
 .lc-code-top.dos{
-    background-color: #e99700;
+    background-color: rgb(157, 199, 101);
 }
 .lcp-wrapper,
 .lcp{
@@ -1459,16 +1483,18 @@ body{
     font-size: clamp(5px, calc(5px + (42 - 5) * ((100vw - 360px) / (1500 - 360))), 42px);
     
     border-radius: 100%;
-    background-color: var(--cyellow);
+    background-color: var(--cgreen);
     box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
 }
 .lcl-name{
     width: 85%;
     font-size: clamp(5px, calc(5px + (32 - 5) * ((100vw - 360px) / (1500 - 360))), 32px);
     
     border-radius: 100%;
-    background-color: var(--cyellow);
+    background-color: var(--cgreen);
     box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    color: white;
 }
 
 
@@ -1502,6 +1528,291 @@ body{
     gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
     font-size: clamp(8px, calc(8px + (32 - 8) * ((100vw - 360px) / (1500 - 360))), 32px);
 }
+
+/*      JOIN        */
+.gmcj-lobby{
+    display: flex;
+}
+.tape,
+.suns,
+.stardot{
+    position: absolute;
+    width: 20%;
+    z-index: 5;
+}
+.estrellita{
+    position: absolute;
+    width: 15%;
+    z-index: 5;
+}
+.tape.uno{
+    top: 0;
+    right: 0;
+    transform: translate(-40%, 40%) rotate(20deg);  
+}
+.tape.dos{
+    top: 50%;
+    right: 0;
+    transform: translate(-50%, -50%) rotate(10deg);
+}
+.estrellita.uno{
+    top: -5%;
+    left: -5%;
+    transform: rotate(-10deg);
+}
+.estrellita.dos{
+    bottom: 0;
+    left: 52%;
+    transform: rotate(10deg);
+}
+.suns{
+    top: 45%;
+    right: 0;
+    transform: translateY(-45%);
+}
+.stardot{
+    top: 0;
+    left: 60%;
+    transform: translateX(-60%);
+}
+
+.lobby-players{
+    display: flex;
+    flex-direction: column;
+    
+    box-sizing: border-box;
+    padding: 0
+    clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+}
+.lp-ig{
+    height: clamp(20px, calc(20px + (100 - 20) * ((100vw - 360px) / (1500 - 360))), 100px);
+}
+.lp-ig img{
+    height: 100%;
+    object-fit: contain;
+    
+}
+.lp-aux-show{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: clamp(4px, calc(4px + (20 - 4) * ((100vw - 360px) / (1500 - 360))), 20px);
+}
+.lp-display,
+.lp-display-tj{
+    background-color: rgb(240, 237, 233);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px)
+             clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px);
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    border-radius: clamp(4px, calc(4px + (20 - 4) * ((100vw - 360px) / (1500 - 360))), 20px);
+    width: clamp(90px, calc(90px + (500 - 90) * ((100vw - 360px) / (1500 - 360))), 500px);
+    box-sizing: border-box;
+
+    box-shadow: 
+    clamp(3px, calc(3px + (5 - 3) * ((100vw - 360px) / (1500 - 360))), 5px)
+    clamp(3px, calc(3px + (5 - 3) * ((100vw - 360px) / (1500 - 360))), 5px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+    transition: transform .3s ease;
+    cursor: pointer;
+}
+.lp-display:hover,
+.lp-display-tj:hover{
+    transform: scale(1.2);
+    z-index: 6;
+}
+#lp-avatar,
+#lp-avatar-tj{
+    width: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);
+    aspect-ratio: 1/1;
+    border-radius: 100%;
+    padding: clamp(2px, calc(2px + (5 - 2) * ((100vw - 360px) / (1500 - 360))), 5px);
+    background-color: white;
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+.lp-aux,
+.lp-aux-tj{
+    display: flex;
+    gap: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    flex: 1;
+    justify-content: space-between;
+}
+.lp-names,
+.lp-names-tj{
+    text-align: start;
+}
+#lpn-user,
+#lpn-user-tj{
+    font-size: clamp(6px, calc(6px + (32 - 6) * ((100vw - 360px) / (1500 - 360))), 32px);
+}
+.lpn-rank,
+.rank{
+    font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
+}
+/* .lp-rank-aux,
+.lp-rank-aux-tj{
+} */
+.lp-rank,
+.lp-rank-tj,
+.lpr,
+.lpr-tj{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.lp-rank,
+.lp-rank-tj{
+    background-color: white;
+    width: clamp(20px, calc(20px + (80 - 20) * ((100vw - 360px) / (1500 - 360))), 80px);
+    aspect-ratio: 1/1;
+    margin-bottom: -10%;
+    
+    clip-path: polygon(
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
+    );
+    transform: rotate(10deg);
+}
+.lpr,
+.lpr-tj{
+    background-color: var(--cyellow);
+    width: 80%;
+    aspect-ratio: 1/1;
+    border-radius: 100%;
+    font-size: clamp(8px, calc(8px + (32 - 8) * ((100vw - 360px) / (1500 - 360))), 32px);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
+.lobby-join{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.lj-je{
+    width: 65%;
+    aspect-ratio: 1/1;
+
+    position: relative;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
+
+    box-shadow: 
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(0, 0, 0, 0.5);
+}
+.lj-je:nth-child(1){
+    transform: rotate(-5deg) translateX(-10%);
+    z-index: 1;
+    background: rgb(254, 255, 166);
+}
+.lj-je-top.uno{
+    background-color: rgb(243, 234, 156);
+}
+.lj-je:nth-child(2){
+    transform: rotate(5deg) translateX(10%);
+    z-index: 2;
+    background-color: var(--corange);
+}
+.lj-je-top.dos{
+    background-color: #e69807;
+}
+.lj-search{
+    width: 90%;
+    background-color: white;
+    display: flex;
+
+    border: clamp(1px, calc(1px + (3 - 1) * ((100vw - 360px) / (1500 - 360))), 3px) solid black;
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    transition: transform .3s ease;
+}
+.lj-search:hover,
+.lj-wrapper:hover{
+    transform: scale(1.4);
+    cursor: pointer;
+}
+.lj-search input{
+    width: 80%;
+    font-size: clamp(6px, calc(6px + (32 - 6) * ((100vw - 360px) / (1500 - 360))), 32px);
+    text-align: center;
+
+    border: none;
+    outline: none;
+    transition: transform .3s ease;
+    background-color: transparent;
+}
+.lj-search button{
+    flex: 1;
+    aspect-ratio: 1/1;
+    border: none;
+    border-radius: clamp(2px, calc(2px + (10 - 2) * ((100vw - 360px) / (1500 - 360))), 10px);
+    transition: all .3s ease;
+    font-size: clamp(4px, calc(4px + (16 - 4) * ((100vw - 360px) / (1500 - 360))), 16px);
+}
+.lj-search button:hover{
+    background-color: var(--corange);
+    color: white;
+    transition: all .3s ease;
+    cursor: pointer;
+}
+.lj-je-top{
+    height: clamp(8px, calc(8px + (50 - 8) * ((100vw - 360px) / (1500 - 360))), 50px);
+    background-color: white;
+
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.lj-wrapper,
+.ljw{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    aspect-ratio: 1/1;
+}
+.lj-wrapper{
+    background-color: white;
+    width: 45%;
+    clip-path: polygon(
+        30% 0%,
+        70% 0%,
+        100% 30%,
+        100% 70%,
+        70% 100%,
+        30% 100%,
+        0% 70%,
+        0% 30%
+    );
+    transition: transform .3s ease;
+}
+.ljw{
+    background-color: var(--cyellow);
+    color: white;
+    border-radius: 100%;
+    width: 85%;
+    font-size: clamp(6px, calc(6px + (42 - 6) * ((100vw - 360px) / (1500 - 360))), 42px);
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
+}
+
 
 /*DESKTOP* JALA/
 /*

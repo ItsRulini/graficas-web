@@ -6,7 +6,7 @@
     --scolor: #fff5a0;
     --tcolor: #ffd9a0;
 
-    --fcolor: rgb(74, 169, 212);
+    --fcolor: rgb(192, 199, 202);
     --ffcolor: rgb(162, 244, 255);
 
     --border-c: rgb(90, 67, 37);
@@ -59,13 +59,13 @@ body{
     z-index: 2;
     display: flex;
     position: relative;
-    background-color: white;
+    background-color: rgb(240, 237, 233);;
 }
 /*    SIGN     */
 .form.register{
     display: flex;
     position: relative;
-    background-color: white;
+    background-color: rgb(240, 237, 233);;
 
     z-index: 1;
     transform: translateX(3%) translateY(-50%) rotate(5deg);
@@ -249,37 +249,37 @@ body{
 .flb,
 .fr-btn,
 .frb{
-    clip-path: polygon(
-        0% 10%,     
-        15% 0%,     
-        85% 5%,   
-        100% 25%,   
-        90% 100%, 
-        60% 120%,
-        20% 110%,  
-        0% 80%   
-    );
-
+    border-radius: clamp(30px, calc(30px + (40 - 30) * ((100vw - 360px) / (1500 - 360))), 40px);
     display: flex;
     justify-content: center;
     align-items: center;
 }
 .fl-btn,
 .fr-btn{
-    background-color: black;
+    background-color: white;
     width: 50%;
-    height: 60px;
+    height:
+    clamp(56px, calc(56px + (85 - 56) * ((100vw - 360px) / (1200 - 360))), 85px);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.3s ease;
+
+    box-shadow: 
+    0
+    clamp(3px, calc(3px + (10 - 3) * ((100vw - 360px) / (1500 - 360))), 10px)
+    0px
+    0px rgba(30, 30, 39, 0.726);
 }
 .flb,
 .frb{
     background-color: var(--cyellow);
-    width: 95%;
-    height: 85%;
+    color: white;
+    width: 90%;
+    height: 75%;
     font-size: clamp(16px, calc(16px + (25 - 16) * ((100vw - 360px) / (1200 - 360))), 25px);
     border: none;
     cursor: pointer;
+
+    box-shadow: 4px 4px 5px 0px rgba(0,0,0,0.5);
 }
 /*      HOVERS      */
 /*HOVER PARA CAMBIAR ENTRE FORMS*/
