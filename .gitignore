@@ -1,0 +1,52 @@
+# ==================== NODE ====================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ==================== ENVIRONMENT ====================
+.env
+.env.local
+.env.production
+.env.development
+*.env
+
+# ==================== OS ====================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+desktop.ini
+
+# ==================== IDE ====================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# ==================== LOGS ====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ==================== BUILD ====================
+dist/
+build/
+.cache/
+*.tsbuildinfo
+
+# ==================== TESTING ====================
+coverage/
+.nyc_output/
+
+# ==================== MISC ====================
+.vercel
+.render
+*.bak
+*.tmp
+.temp/
