@@ -3,6 +3,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
+import cors from 'cors';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -20,19 +21,26 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// Middleware
+// Middleware CORS - IMPORTANTE para que Vercel pueda conectarse
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Servir archivos estáticos del frontend
-app.use(express.static(path.join(__dirname, '../../frontend')));
+// En producción NO servimos archivos estáticos (eso lo hace Vercel)
+// Solo en desarrollo
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static(path.join(__dirname, '../../frontend')));
+}
 
 // ==================== ENDPOINTS ====================
 
 // Endpoint para verificar conexión a la base de datos
 app.get('/api/db-status', async (req, res) => {
   try {
-    // Intentar hacer una consulta simple
     const { data, error } = await supabase
       .from('users')
       .select('count')
@@ -79,7 +87,8 @@ app.get('/api/test', (req, res) => {
     env: {
       PORT: process.env.PORT,
       NODE_ENV: process.env.NODE_ENV,
-      SUPABASE_CONFIGURED: !!process.env.SUPABASE_URL
+      SUPABASE_CONFIGURED: !!process.env.SUPABASE_URL,
+      FRONTEND_URL: process.env.FRONTEND_URL
     }
   });
 });
@@ -93,9 +102,21 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Ruta por defecto - redirige al index.html
+// Ruta por defecto - Solo en desarrollo
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, '../../frontend/index.html'));
+  if (process.env.NODE_ENV === 'production') {
+    res.json({
+      message: 'CHAOS Game API',
+      version: '1.0.0',
+      endpoints: [
+        'GET /api/health',
+        'GET /api/test',
+        'GET /api/db-status'
+      ]
+    });
+  } else {
+    res.sendFile(path.join(__dirname, '../../frontend/index.html'));
+  }
 });
 
 // 404 handler
@@ -118,9 +139,10 @@ app.use((err, req, res, next) => {
 // Iniciar servidor
 app.listen(PORT, () => {
   console.log(`
-    ✅ Servidor corriendo en: http://localhost:${PORT}
-    🎮 Frontend: http://localhost:${PORT}
-    🧪 API Test: http://localhost:${PORT}/api/test
+    ✅ Servidor corriendo en puerto ${PORT}
+    🔧 Ambiente: ${process.env.NODE_ENV || 'development'}
+    ${process.env.NODE_ENV !== 'production' ? '🎮 Frontend: http://localhost:' + PORT : ''}
+    🧪 API: http://localhost:${PORT}/api/test
     💾 DB Status: http://localhost:${PORT}/api/db-status
   `);
 });
