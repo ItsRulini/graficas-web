@@ -485,5 +485,32 @@
         </div>
     </div>
     <!-- SCRIPTS.js -->
+    <!-- Script de prueba de conexión API -->
+    <script type="module"> 
+        import api from './public/js/api.js';
+
+        // Probar conexión al cargar la página
+        window.addEventListener('DOMContentLoaded', async () => {
+            console.log('🧪 Probando conexión con el backend...');
+            
+            try {
+                // Test 1: Health check
+                const health = await api.healthCheck();
+                console.log('✅ Health Check:', health);
+
+                // Test 2: Test endpoint
+                const test = await api.testConnection();
+                console.log('✅ Test Connection:', test);
+
+                // Test 3: Database status
+                const db = await api.checkDatabase();
+                console.log('✅ Database Status:', db);
+
+                console.log('🎉 ¡Todas las conexiones funcionan correctamente!');
+            } catch (error) {
+                console.error('❌ Error conectando con el backend:', error);
+            }
+        });
+    </script>
     <script src="public/js/MENU.js" type="module"></script>
 </body>
