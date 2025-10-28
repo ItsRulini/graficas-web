@@ -2,22 +2,14 @@ services:
   - type: web
     name: chaos-game-backend
     env: node
-    region: oregon # Puedes cambiar a tu región preferida
-    plan: free
-    # Importante: La ruta debe apuntar a donde está tu server.js
+    rootDirectory: backend
     buildCommand: npm install
-    startCommand: node server.js
+    startCommand: node src/server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000 # Puerto por defecto de Render
       - key: HOST
         value: 0.0.0.0
       - key: FRONTEND_URL
-        value: https://graficas-web-blush.vercel.app/
-      - key: SUPABASE_URL
-        sync: false # Configurar en el dashboard de Render
-      - key: SUPABASE_ANON_KEY
-        sync: false # Configurar en el dashboard de Render
+        value: https://graficas-web-blush.vercel.app
