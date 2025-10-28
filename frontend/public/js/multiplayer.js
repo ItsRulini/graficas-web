@@ -5,6 +5,8 @@ export class MultiplayerManager {
         this.playerCharacter = '';
         this.otherPlayers = {};
         this.isConnected = false;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
         
         this._GetPlayerInfo();
         this._Connect();
@@ -16,7 +18,8 @@ export class MultiplayerManager {
         this.playerCharacter = localStorage.getItem('PlayerName');
         
         if (!this.playerNickname || !this.playerCharacter) {
-            alert('❌ Missing player information. Redirecting...');
+            console.error('❌ Missing player information');
+            alert('⚠️ Información de jugador no encontrada. Redirigiendo...');
             window.location.href = '/index.html';
             return;
         }
@@ -26,44 +29,114 @@ export class MultiplayerManager {
     }
 
     _Connect() {
-        this.socket = io('http://localhost:3000');
+        // Verificar que Socket.IO esté disponible
+        if (typeof io === 'undefined') {
+            console.error('❌ Socket.IO not loaded! Make sure to include the CDN script.');
+            alert('Error: Socket.IO no está cargado. Verifica tu conexión.');
+            return;
+        }
 
+        // Obtener URL del servidor desde variable global
+        const serverUrl = window.SERVER_URL || 'http://localhost:3000';
+        console.log(`🔌 Connecting to: ${serverUrl}`);
+
+        // Configuración de conexión con opciones mejoradas
+        this.socket = io(serverUrl, {
+            transports: ['websocket', 'polling'], // Intentar WebSocket primero, luego polling
+            reconnection: true,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            reconnectionAttempts: this.maxReconnectAttempts,
+            timeout: 10000
+        });
+
+        // Evento: Conexión exitosa
         this.socket.on('connect', () => {
             console.log('✅ Connected to server');
+            console.log('🆔 Socket ID:', this.socket.id);
             this.isConnected = true;
+            this.reconnectAttempts = 0;
             
-            // Enviar nickname Y personaje al servidor
+            // Enviar información del jugador al servidor
             this.socket.emit('Iniciar', {
                 nickname: this.playerNickname,
                 character: this.playerCharacter
             });
         });
 
-        this.socket.on('disconnect', () => {
-            console.log('❌ Disconnected from server');
-            this.isConnected = false;
+        // Evento: Error de conexión
+        this.socket.on('connect_error', (error) => {
+            console.error('❌ Connection error:', error.message);
+            this.reconnectAttempts++;
+            
+            if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+                console.error('💔 Max reconnection attempts reached');
+                alert('No se pudo conectar al servidor. Verifica tu conexión.');
+            }
         });
 
-        // Escuchar nuevos jugadores
+        // Evento: Desconexión
+        this.socket.on('disconnect', (reason) => {
+            console.log('⚠️ Disconnected from server. Reason:', reason);
+            this.isConnected = false;
+            
+            if (reason === 'io server disconnect') {
+                // El servidor cerró la conexión, intentar reconectar manualmente
+                console.log('🔄 Attempting manual reconnection...');
+                this.socket.connect();
+            }
+        });
+
+        // Evento: Reconexión
+        this.socket.on('reconnect', (attemptNumber) => {
+            console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
+        });
+
+        // Evento: Nuevo jugador se une
         this.socket.on('Iniciar', (data) => {
             console.log(`🎮 Player data received:`, data);
-            if (data.nickname !== this.playerNickname && !this.otherPlayers[data.nickname]) {
+            
+            // No procesar nuestros propios datos
+            if (data.nickname === this.playerNickname) {
+                console.log('ℹ️ Ignoring own player data');
+                return;
+            }
+
+            // Crear jugador si no existe
+            if (!this.otherPlayers[data.nickname]) {
+                console.log(`➕ Creating new player: ${data.nickname}`);
                 if (this.onCreatePlayer) {
                     this.onCreatePlayer(data.nickname, data.character);
                 }
             }
         });
 
-        // Escuchar actualizaciones de posición
+        // Evento: Actualización de posición de otros jugadores
         this.socket.on('Posicion', (posicionData, nickname) => {
-            if (nickname !== this.playerNickname) {
-                if (this.onUpdatePlayer) {
-                    this.onUpdatePlayer(nickname, posicionData);
-                }
+            // No procesar nuestra propia posición
+            if (nickname === this.playerNickname) {
+                return;
+            }
+
+            if (this.onUpdatePlayer) {
+                this.onUpdatePlayer(nickname, posicionData);
+            }
+        });
+
+        // Evento: Jugador se desconectó
+        this.socket.on('PlayerDisconnected', (nickname) => {
+            console.log(`👋 Player disconnected: ${nickname}`);
+            
+            if (this.onRemovePlayer) {
+                this.onRemovePlayer(nickname);
             }
         });
     }
 
+    /**
+     * Enviar posición del jugador al servidor
+     * @param {Object} position - Objeto con x, y, z
+     */
     SendPosition(position) {
         if (this.isConnected && this.socket) {
             this.socket.emit('Posicion', {
@@ -74,7 +147,30 @@ export class MultiplayerManager {
         }
     }
 
+    /**
+     * Verificar si está conectado al servidor
+     * @returns {boolean}
+     */
     IsConnected() {
         return this.isConnected;
+    }
+
+    /**
+     * Desconectar manualmente del servidor
+     */
+    Disconnect() {
+        if (this.socket) {
+            console.log('🔌 Disconnecting from server...');
+            this.socket.disconnect();
+            this.isConnected = false;
+        }
+    }
+
+    /**
+     * Obtener lista de jugadores conectados
+     * @returns {Object}
+     */
+    GetOtherPlayers() {
+        return this.otherPlayers;
     }
 }
