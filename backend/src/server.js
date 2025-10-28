@@ -1,19 +1,27 @@
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-import { createClient } from '@supabase/supabase-js';
-import cors from 'cors';
+// server_juego.js - Versión integrada con Socket.IO + API + Supabase
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+const cors = require('cors');
+const dotenv = require('dotenv');
+const { createClient } = require('@supabase/supabase-js');
 
 // Cargar variables de entorno
 dotenv.config();
 
+// Crear servidor Express
 const app = express();
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
 
-// Configurar __dirname para ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Crear instancia de Socket.IO vinculada al servidor
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "*",
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
 
 // Inicializar cliente de Supabase
 const supabase = createClient(
@@ -21,22 +29,50 @@ const supabase = createClient(
   process.env.SUPABASE_ANON_KEY
 );
 
-// Middleware CORS - IMPORTANTE para que Vercel pueda conectarse
+// ==================== MIDDLEWARE ====================
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: process.env.FRONTEND_URL || '*',
   credentials: true
 }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// En producción NO servimos archivos estáticos (eso lo hace Vercel)
-// Solo en desarrollo
+// Servir archivos estáticos desde la carpeta "frontend"
 if (process.env.NODE_ENV !== 'production') {
   app.use(express.static(path.join(__dirname, '../../frontend')));
 }
 
-// ==================== ENDPOINTS ====================
+// ==================== ENDPOINTS API ====================
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Servidor funcionando',
+    timestamp: new Date().toISOString(),
+    services: {
+      express: '✅',
+      socketio: '✅',
+      supabase: supabase ? '✅' : '❌'
+    }
+  });
+});
+
+// Endpoint de prueba
+app.get('/api/test', (req, res) => {
+  res.json({ 
+    mensaje: 'API funcionando correctamente',
+    fecha: new Date().toLocaleString(),
+    env: {
+      PORT: process.env.PORT || 3000,
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      SUPABASE_CONFIGURED: !!process.env.SUPABASE_URL,
+      FRONTEND_URL: process.env.FRONTEND_URL
+    },
+    jugadoresConectados: listaJugadores.length
+  });
+});
 
 // Endpoint para verificar conexión a la base de datos
 app.get('/api/db-status', async (req, res) => {
@@ -45,7 +81,7 @@ app.get('/api/db-status', async (req, res) => {
       .from('users')
       .select('count')
       .limit(1);
-
+    
     if (error) {
       return res.status(500).json({
         success: false,
@@ -57,7 +93,7 @@ app.get('/api/db-status', async (req, res) => {
         }
       });
     }
-
+    
     res.json({
       success: true,
       message: '✅ Conexión exitosa a la base de datos',
@@ -68,7 +104,6 @@ app.get('/api/db-status', async (req, res) => {
         tables_accessible: true
       }
     });
-
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -79,45 +114,111 @@ app.get('/api/db-status', async (req, res) => {
   }
 });
 
-// Ruta API de prueba
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    mensaje: 'API funcionando correctamente',
-    fecha: new Date().toLocaleString(),
-    env: {
-      PORT: process.env.PORT,
-      NODE_ENV: process.env.NODE_ENV,
-      SUPABASE_CONFIGURED: !!process.env.SUPABASE_URL,
-      FRONTEND_URL: process.env.FRONTEND_URL
-    }
-  });
-});
-
-// Health check
-app.get('/api/health', (req, res) => {
+// Endpoint para obtener jugadores conectados
+app.get('/api/players', (req, res) => {
   res.json({
-    status: 'OK',
-    message: 'Servidor funcionando',
-    timestamp: new Date().toISOString()
+    success: true,
+    count: listaJugadores.length,
+    players: listaJugadores.map(p => ({
+      nickname: p.nickname,
+      character: p.character,
+      position: { x: p.x, y: p.y, z: p.z }
+    }))
   });
 });
 
-// Ruta por defecto - Solo en desarrollo
+// Ruta raíz
 app.get('/', (req, res) => {
   if (process.env.NODE_ENV === 'production') {
     res.json({
-      message: 'CHAOS Game API',
+      message: 'CHAOS Game API + Socket.IO Server',
       version: '1.0.0',
       endpoints: [
         'GET /api/health',
         'GET /api/test',
-        'GET /api/db-status'
-      ]
+        'GET /api/db-status',
+        'GET /api/players'
+      ],
+      socketio: {
+        events: ['Iniciar', 'Posicion', 'disconnect']
+      }
     });
   } else {
     res.sendFile(path.join(__dirname, '../../frontend/index.html'));
   }
 });
+
+// ==================== SOCKET.IO - MULTIPLAYER ====================
+
+// Lista de jugadores
+const listaJugadores = [];
+
+// Escuchar conexiones
+io.on('connection', (socket) => {
+  console.log('👤 User connected:', socket.id);
+
+  // Evento: Jugador se une
+  socket.on('Iniciar', (data) => {
+    console.log('🎮 Player joined:', data);
+    
+    const existe = listaJugadores.find(p => p.nickname === data.nickname);
+    if (!existe) {
+      listaJugadores.push({
+        nickname: data.nickname,
+        character: data.character,
+        socketId: socket.id,
+        x: 0,
+        y: 0,
+        z: 0
+      });
+      
+      console.log(`📊 Total players: ${listaJugadores.length}`);
+    }
+
+    // Notificar a todos los clientes
+    io.emit('Iniciar', data);
+
+    // Enviar lista de jugadores existentes al nuevo jugador
+    listaJugadores.forEach(player => {
+      socket.emit('Iniciar', {
+        nickname: player.nickname,
+        character: player.character
+      });
+    });
+  });
+
+  // Evento: Actualización de posición
+  socket.on('Posicion', (posicion, nickname) => {
+    const player = listaJugadores.find(p => p.nickname === nickname);
+    if (player) {
+      player.x = posicion.x;
+      player.y = posicion.y;
+      player.z = posicion.z;
+
+      // Broadcast a todos excepto al emisor
+      socket.broadcast.emit('Posicion', posicion, nickname);
+    }
+  });
+
+  // Evento: Desconexión
+  socket.on('disconnect', () => {
+    console.log('👋 User disconnected:', socket.id);
+    const index = listaJugadores.findIndex(p => p.socketId === socket.id);
+    
+    if (index !== -1) {
+      const disconnectedPlayer = listaJugadores[index];
+      console.log('🗑️ Removing player:', disconnectedPlayer.nickname);
+      
+      // Notificar a otros jugadores sobre la desconexión
+      io.emit('PlayerDisconnected', disconnectedPlayer.nickname);
+      
+      listaJugadores.splice(index, 1);
+      console.log(`📊 Total players: ${listaJugadores.length}`);
+    }
+  });
+});
+
+// ==================== ERROR HANDLERS ====================
 
 // 404 handler
 app.use((req, res) => {
@@ -129,20 +230,28 @@ app.use((req, res) => {
 
 // Error handler
 app.use((err, req, res, next) => {
-  console.error('Error:', err);
+  console.error('❌ Error:', err);
   res.status(500).json({ 
     error: 'Error interno del servidor',
     message: err.message 
   });
 });
 
-// Iniciar servidor
-app.listen(PORT, () => {
+// ==================== INICIAR SERVIDOR ====================
+
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
   console.log(`
-    ✅ Servidor corriendo en puerto ${PORT}
-    🔧 Ambiente: ${process.env.NODE_ENV || 'development'}
-    ${process.env.NODE_ENV !== 'production' ? '🎮 Frontend: http://localhost:' + PORT : ''}
-    🧪 API: http://localhost:${PORT}/api/test
-    💾 DB Status: http://localhost:${PORT}/api/db-status
+╔════════════════════════════════════════════════════════╗
+║  🚀 SERVIDOR CHAOS GAME INICIADO                      ║
+╠════════════════════════════════════════════════════════╣
+║  📡 Puerto: ${PORT}                                    ║
+║  🔧 Ambiente: ${process.env.NODE_ENV || 'development'}
+║  ${process.env.NODE_ENV !== 'production' ? '🎮 Frontend: http://localhost:' + PORT : '                                                        '}
+║  🧪 API Test: http://localhost:${PORT}/api/test        ║
+║  💾 DB Status: http://localhost:${PORT}/api/db-status  ║
+║  👥 Players: http://localhost:${PORT}/api/players      ║
+║  🔌 Socket.IO: Activo                                  ║
+╚════════════════════════════════════════════════════════╝
   `);
 });
