@@ -513,4 +513,39 @@
         });
     </script>
     <script src="public/js/MENU.js" type="module"></script>
+    <!--AGREGADO PARA MULTI-->
+    <script>
+document.addEventListener('DOMContentLoaded', () => {
+    const playButton = document.getElementById('pGame');
+    const nicknameInput = document.querySelector('.lc-code input[type="text"]');
+    
+    if (playButton) {
+        playButton.addEventListener('click', () => {
+            const nickname = nicknameInput.value.trim();
+            
+            // Validar nickname
+            if (!nickname || nickname === '#RYOFG') {
+                alert('⚠️ Please enter your nickname!');
+                return;
+            }
+            
+            // Verificar que el personaje esté seleccionado
+            const selectedCharacter = localStorage.getItem('PlayerName');
+            if (!selectedCharacter) {
+                alert('⚠️ Please select a character first!');
+                return;
+            }
+            
+            // Guardar SOLO el nickname
+            localStorage.setItem('PlayerNickname', nickname);
+            
+            console.log(`✅ Nickname: ${nickname}`);
+            console.log(`✅ Character: ${selectedCharacter}`);
+            
+            // Redirigir al juego
+            window.location.href = '/SCENE.html';
+        });
+    }
+});
+    </script>
 </body>
