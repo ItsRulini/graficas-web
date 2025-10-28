@@ -35,7 +35,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/frontend/index.html"
+      "destination": "frontend"
     }
   ]
 }
