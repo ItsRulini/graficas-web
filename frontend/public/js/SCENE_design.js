@@ -14,6 +14,9 @@ export class _Scene{
         this.gameMode = document.getElementById("gamemode-gmc");
         this.quitBtn = document.getElementById("quit-gmc");
         this.reloadBtn = document.getElementById("reload-gmc");
+
+        this.messagelosewin = document.querySelector(".wl-display");
+        this.messagelw_close = document.querySelector(".gmwl-close");
     }
     bindEvents(){
         //Abrir menu de pausa con tecla "p"
@@ -28,6 +31,15 @@ export class _Scene{
             btn.addEventListener("click", () => {
                 this.togglePauseMenu(false);
             });
+        });
+        //Abrir mensaje de perdiste con l
+        // document.addEventListener("keydown", (e) => {
+        //     if (e.key.toLowerCase() === "l") {
+        //         this.messagelosewin.style.display = "flex";
+        //     }
+        // });
+        this.messagelw_close.addEventListener('click', () => {
+            this.messagelosewin.style.display = 'none';
         });
     }
     togglePauseMenu(open){

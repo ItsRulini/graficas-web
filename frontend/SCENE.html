@@ -61,9 +61,88 @@
             </div>
         </div>
     </div>
+    <!-- Mensajes de WIN, LOSE -->
+    <div class="gmwl-msg wl-display" style="display: none;"> <!--fondo -->
+        <div class="gmwl-set">
+            <div class="gmwl-close sfx-btn-close">
+                <div class="gmwl-accept">x</div>
+            </div>
+            <div class="gmc-img">
+                <!-- <img src="resources/img/paperstar.png" alt="paperstar" id="paperstar">
+                <img src="resources/img/10.png" alt="stars" id="stars"> -->
+                <img src="resources/img/8.png" alt="cinta" id="cinta">
+                <img src="resources/img/8.png" alt="cinta" id="cintados">
+            </div>
+            <div class="gmc-left">
+                <div class="gmc-page uno"></div>
+                <div class="gmc-page dos"></div>
+                <div class="gmc-page tres"></div>
+                <div class="gmc-page cuatro"></div>
+                <div class="gmc-page cinco"></div>
+            </div>
+            <div class="gmwl-set-aux">
+                <div class="gmwl-set-h">
+                    <img src="resources/img/ulose.png" alt="you lose" id="img-lose">
+                    <img src="resources/img/uwin.png" alt="you win" id="img-win" style="display: none;">
+                </div>
+                <p>Note: Must've been skill issue.</p>
+            </div>
+        </div>
+    </div> 
+    <!-- TIMER, objetos recolectados etc -->
+    <div class="gm-display">
+        <!-- item recolectado -->
+        <div class="gm-colect">
+            <img src="resources/img/question.png" alt="unknown">
+        </div>
+        <!-- timer -->
+        <div class="gmd-level-name">
+            <div class="timer">Timer:</span></div>
+            <div class="ndos" id="secs"><span></span></div>
+        </div>
+        <div class="gmd-level-name">
+            <div class="deaths"><i class="fa-solid fa-skull"></i>:</span></div>
+            <div class="ndos" id="deaths"><span></span></div>
+        </div>
+        <div class="gmd-player-stats">
+
+            <div class="p-rank-aux-tj">
+                <!-- <p class="rank">RANK</p> -->
+                <div class="p-rank-tj">
+                    <div class="pr-tj">
+                        <i class="fa-solid fa-question"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="gmdps-img">
+                <!-- mostrar imagen en base a la seleccion de personaje -->
+                <img src="resources/img/isabelle.png" alt="player">
+            </div>
+            <div class="gmdps-details">
+                <p>Username</p>
+                <div class="d-score">
+                    <span><i class="fa-solid fa-star"></i></span>
+                    <span id="uscore"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- ITEM QUE RECOLECTO -->
+    <!-- <div class="gm-colect-aux">
+        <div class="gm-colect">
+            <img src="resources/img/question.png" alt="unknown">
+        </div>
+        <div class="gm-colect-item">
+            <span>ITEM COLLECTED:</span>
+            <img src="resources/img/fossil_c.png" alt="colected item"> 
+        </div>
+    </div> -->
+
     <script src="/socket.io/socket.io.js"></script>  <!--AGREGADO PARA MULTI-->
-    <script type="module" src="public/js/SCENE.js"></script>
+    
     <script type="module" src="public/js/SCENE_design.js"></script>
+    <script type="module" src="public/js/SCENE.js"></script>
     <!-- <script type="module" src="/js/multiplayer.js"></script> -->
     <!-- <script type="module" src="public/js/SCENE_design.js"></script> -->
 </body>
