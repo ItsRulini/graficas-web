@@ -4,6 +4,9 @@ import {FBXLoader} from 'https://cdn.jsdelivr.net/npm/three@0.118.1/examples/jsm
 import {OrbitControls} from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/controls/OrbitControls.js';
 import { MultiplayerManager } from './multiplayer.js'; //AGREGADO PARA MULTI
 
+import { Water } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/objects/Water2.js'; //agua
+// import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh'; //colisiones segun el modelo
+
 console.log("hola");
 
 ////    MODELOS de PERSONAJES    ////
@@ -88,17 +91,78 @@ class BasicCharacterControllerProxy {
 class BasicCharacterController {
   constructor(params) {
     this._Init(params);
-     // ✅ Si existen cajas en los params, guárdalas directamente
-  this._collisionBoxes = params.collisionBoxes || [];
+    this._world = params.world;
+    
+    //        ! ! ! Guardar referencias a colisiones
+    this._collisionBoxes = params.collisionBoxes || [];
+    this._leveloneHitboxes = params.leveloneHitboxes || [];
+    this._platformsHitboxes = params._platformsHitboxes || [];
+    this._qboxHitboxes = params._qboxHitboxes || [];
+    this._interactHitboxes = [];
+    this._checkpointHitboxes = params._checkpointHitboxes || [];
 
-  // 🔧 Crea los Box3 de cada colisión
-  this._collisionBoxes.forEach(box => {
-    box.updateMatrixWorld(true);
-    box.userData.box = new THREE.Box3().setFromObject(box);
-  });
+    //Cachear raycaster para mejor performance
+    this._raycaster = new THREE.Raycaster();
+    this._raycaster.far = 5; // Radio máximo de detección
 
-  console.log("✅ Cajas de colisión asignadas al jugador:", this._collisionBoxes.length);
-  }
+    // Crear Box3 para collisionBoxes
+    this._collisionBoxes.forEach(box => {
+        box.updateMatrixWorld(true);
+        if (!box.userData.box) {
+            box.userData.box = new THREE.Box3().setFromObject(box);
+        }
+    });
+
+    // Crear Box3 para leveloneHitboxes
+    this._leveloneHitboxes.forEach(collider => {
+        if (collider) {
+            collider.updateMatrixWorld(true);
+            if (!collider.userData.box3) {
+                collider.userData.box3 = new THREE.Box3().setFromObject(collider);
+            }
+        }
+    });
+
+    // Crear Box3 para _platformsHitboxes
+    this._platformsHitboxes.forEach(collider => {
+        if (collider) {
+            collider.updateMatrixWorld(true);
+            if (!collider.userData.box3) {
+                collider.userData.box3 = new THREE.Box3().setFromObject(collider);
+            }
+        }
+    });
+
+    // Crear Box3 para _qboxHitboxes
+    this._qboxHitboxes.forEach(collider => {
+        if (collider) {
+            collider.updateMatrixWorld(true);
+            if (!collider.userData.box3) {
+                collider.userData.box3 = new THREE.Box3().setFromObject(collider);
+            }
+        }
+    });
+
+    // Crear Box3 para _checkpointHitboxes
+    this._checkpointHitboxes.forEach(collider => {
+        if (collider) {
+            collider.updateMatrixWorld(true);
+            if (!collider.userData.box3) {
+                collider.userData.box3 = new THREE.Box3().setFromObject(collider);
+            }
+        }
+    });
+
+    console.log("Sistema de colisiones inicializado:");
+    console.log(`   - Paredes del terreno: ${this._collisionBoxes.length}`);
+    console.log(`   - Objetos del escenario: ${this._leveloneHitboxes.length}`);
+    console.log(`   - Plataformas del escenario: ${this._platformsHitboxes.length}`);
+    console.log(`   - Drop Box del escenario: ${this._qboxHitboxes.length}`);
+    console.log(`   - Checkpoints del escenario: ${this._checkpointHitboxes.length}`);
+
+    //bool para hacer visible/invisible un item
+    this._itemsVisible = true;
+}
 
   _Init(params) {
     this._params = params;
@@ -110,6 +174,17 @@ class BasicCharacterController {
     this._jumpVelocity = 0;
     this._gravity = -50;
 
+    // ---        Variables del jugador       ---
+    this._elapsedTime = 0; //conteo, tiempo q lleva jugando
+    this._totaldeaths = 0;
+    this._totalScore = 0;
+
+    this._isSlowed = false; //relentizado
+    this._slowEndTime = 0; //tiempo de relentizado
+    this._baseAcceleration = this._acceleration.clone();
+
+
+    //Animaciones
     this._animations = {};
     this._input = new BasicCharacterControllerInput();
     this._stateMachine = new CharacterFSM(
@@ -118,9 +193,14 @@ class BasicCharacterController {
     this._previousPosition = new THREE.Vector3(0, 0, 0);
 
     this._LoadModels();
-
-    
-
+  }
+  
+  //Método para verificar si un objeto está en el agua (el jugador)
+  _IsObjectInWater(objectBoundingBox) {
+    if (!this._world || !this._world._waterBoundingBox) {
+      return false;
+    }
+    return this._world._waterBoundingBox.intersectsBox(objectBoundingBox);
   }
 
   //Cargar modelo
@@ -189,12 +269,12 @@ class BasicCharacterController {
 
     this._params.scene.add(this._target);
 
-    // ⭐ MODIFICACIÓN: Esperar a que el terreno esté listo antes de posicionar
+    //Esperar a que el terreno esté listo antes de posicionar
     console.log("⏳ Esperando que el terreno esté completamente listo...");
     await this._WaitForTerrainReady();
     
     const startHeight = this._GetTerrainHeightAt(0, 0);
-    this._target.position.set(0, startHeight + 0.5, 0);
+    this._target.position.set(-105, startHeight + 0.5, -115); //      ! POSICIÓN DEL JUGADOR
     console.log(`✅ Personaje colocado en Y = ${this._target.position.y.toFixed(2)}`);
 
     // 2. Crear mixer y cargar animaciones
@@ -216,14 +296,19 @@ class BasicCharacterController {
     console.log("✅ Animaciones cargadas:", Object.keys(this._animations));
 
     // Crear bounding box del jugador
-    this._playerBox = new THREE.Box3().setFromObject(this._target);
-    this._playerBoxHelper = new THREE.Box3Helper(this._playerBox, 0xff0000); // rojo
+    this._playerBox = new THREE.Box3(
+        new THREE.Vector3(-1, 0, -1),   // Min (x, y, z)
+        new THREE.Vector3(1, 10, 1)      // Max (x, y, z)
+    );
+    // Después actualizar posición en Update()
+    this._playerBoxHelper = new THREE.Box3Helper(this._playerBox, 0x800080);
     // scene.add(this._playerBoxHelper);
+
     this._params.scene.add(this._playerBoxHelper);
     this._isModelReady = true;
   }
 
-  // ⭐ NUEVA FUNCIÓN: Esperar a que el terreno esté completamente listo
+  //Esperar a que el terreno esté completamente listo
   async _WaitForTerrainReady() {
     return new Promise((resolve) => {
       const checkTerrain = () => {
@@ -294,11 +379,45 @@ class BasicCharacterController {
     }
   }
 
-  Update(timeInSeconds) {
+//      UPDATE:
+//      1. Movimiento en tiempo real, tmb actualizando la caja de colision del jugador
+//      2. Deteccion de colisiones, terreno, modelos, plataformas, items especiales, etc
+//      3. Funcion de salto entre plataformas (ligado a la funcion _HandleJump)
+Update(timeInSeconds) {
     if (!this._target) return;
 
-    console.log("Boxes en update:", this._collisionBoxes?.length);
+    //Acumula el tiempo total jugado
+    this._elapsedTime += timeInSeconds;
 
+    //verificar si debe terminar la ralentización (MAS ABAJO)
+    if (this._isSlowed && this._elapsedTime >= this._slowEndTime) {
+      this._isSlowed = false;
+      // Restaura la aceleración base
+      this._acceleration.copy(this._baseAcceleration);
+      console.log('Ralentización terminada');
+    }
+
+
+    //actualizar la posicion al inicio si cae o toca el agua
+    const startHeight = this._GetTerrainHeightAt(0, 0);
+
+    //Muestra en el span el tiempo transcurrido
+    const timeDisplay = document.getElementById('secs');
+    if (timeDisplay) {
+        const totalSeconds = Math.floor(this._elapsedTime);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        timeDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        //basicamente es para mostrar el tiempo como: minutos:segundos
+    }
+
+    //conteo de muertes
+    const totalDeaths = document.getElementById('deaths');
+    totalDeaths.textContent = this._totaldeaths; //conteo de muertes
+
+    //puntaje acumulado
+    const totalscore = document.getElementById('uscore');
+    totalscore.textContent = this._totalScore;
 
     this._stateMachine.Update(timeInSeconds, this._input);
 
@@ -337,82 +456,751 @@ class BasicCharacterController {
 
     controlObject.quaternion.copy(_R);
 
-    const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(controlObject.quaternion).normalize().multiplyScalar(velocity.z * timeInSeconds);
-    const sideways = new THREE.Vector3(1, 0, 0).applyQuaternion(controlObject.quaternion).normalize().multiplyScalar(velocity.x * timeInSeconds);
+    const forward = new THREE.Vector3(0, 0, 1)
+        .applyQuaternion(controlObject.quaternion)
+        .normalize()
+        .multiplyScalar(velocity.z * timeInSeconds);
+    
+    const sideways = new THREE.Vector3(1, 0, 0)
+        .applyQuaternion(controlObject.quaternion)
+        .normalize()
+        .multiplyScalar(velocity.x * timeInSeconds);
 
     controlObject.position.add(forward);
     controlObject.position.add(sideways);
 
     // --- Salto y altura sobre el terreno ---
     this._HandleJump(timeInSeconds);
-    if (!this._isJumping) {
-        this._UpdateHeightOnTerrain();
-        // console.log("¡Jump!");
+
+    // --- Salto entre plataformas Y QBOX (si salta sobre ellas) ---
+    if (!this._isJumping && !this._isOnPlatform && !this._isOnQBox && !this._currentPlatform) {
+      this._UpdateHeightOnTerrain();
     }
 
-    // Update
+    //NUEVA VERIFICACIÓN DE COLISIONES PRECISAS
     if (this._target && this._playerBox) {
-      // Actualizamos la caja del jugador
-      this._playerBox.setFromObject(this._target);
-      this._playerBoxHelper.updateMatrixWorld(true);
+        const currentSize = new THREE.Vector3();
+        this._playerBox.getSize(currentSize);
+        
+        const newCenter = new THREE.Vector3();
+        newCenter.copy(this._target.position);
+        newCenter.y += currentSize.y / 2; // Centrar en altura
+        
+        this._playerBox.setFromCenterAndSize(newCenter, currentSize);
+        this._playerBoxHelper.updateMatrixWorld(true);
 
-      let isColliding = false;
+        // console.log(`Estado: jumping=${this._isJumping}, onPlatform=${this._isOnPlatform}, Y=${this._target.position.y.toFixed(2)}`);
 
-      for (let box of this._collisionBoxes) {
-          if (this._playerBox.intersectsBox(box.userData.box)) {
-              console.log("Colisionando con los limites del terreno, retrocede");
-              isColliding = true;
-              break;
-          }
+        let isColliding = false; //esta colisionando con el terreno
+        let collidingObject = null;
+
+        //1. Verificar colisiones con paredes del terreno (Box3 simple)
+        for (let box of this._collisionBoxes) {
+            if (this._playerBox.intersectsBox(box.userData.box)) {
+                isColliding = true;
+                collidingObject = "[! - COLISION DETECTADA]: Pared del terreno";
+                break;
+            }
+        }
+
+        //2. Verificar colisiones PRECISAS con geometría real
+        if (!isColliding && (
+    (this._leveloneHitboxes && this._leveloneHitboxes.length > 0) ||
+    (this._platformsHitboxes && this._platformsHitboxes.length > 0) ||
+    (this._qboxHitboxes && this._qboxHitboxes.length > 0)
+  )) {
+    const playerCenter = new THREE.Vector3();
+    this._playerBox.getCenter(playerCenter);
+
+    const playerSize = new THREE.Vector3();
+    this._playerBox.getSize(playerSize);
+
+    // console.log(`Tamaño: ${playerSize.x.toFixed(2)} x ${playerSize.y.toFixed(2)} x ${playerSize.z.toFixed(2)}`);
+    // console.log(`Radio: ${(Math.max(playerSize.x, playerSize.z) * 0.6).toFixed(2)}`);
+
+    const detectionRadius = Math.max(playerSize.x, playerSize.z) * 0.6;
+
+    const allColliders = [
+      ...(this._leveloneHitboxes || []),
+      ...(this._platformsHitboxes || []),
+      ...(this._qboxHitboxes || []),
+      ...(this._checkpointHitboxes || [])
+    ];
+
+    for (let collider of allColliders) {
+      if (!collider) continue;
+
+      //CRÍTICO: Ignorar SOLO plataformas en colisiones horizontales
+      //Las QBox SÍ deben bloquear lateralmente
+      const isPlatformCollider = this._platformsHitboxes.includes(collider);
+      
+      if (isPlatformCollider) {
+        continue; // Plataformas: solo permitir colisión vertical (salto)
+      }
+      // QBox: permite colisión horizontal (bloqueará el movimiento)
+
+      collider.updateMatrixWorld(true);
+      collider.userData.box = new THREE.Box3().setFromObject(collider);
+
+      if (!this._playerBox.intersectsBox(collider.userData.box)) continue;
+
+      const raycaster = new THREE.Raycaster();
+      raycaster.far = detectionRadius * 2;
+
+      const directions = [
+        new THREE.Vector3(1, 0, 0),
+        new THREE.Vector3(-1, 0, 0),
+        new THREE.Vector3(0, 0, 1),
+        new THREE.Vector3(0, 0, -1),
+        new THREE.Vector3(0.707, 0, 0.707),
+        new THREE.Vector3(-0.707, 0, 0.707),
+        new THREE.Vector3(0.707, 0, -0.707),
+        new THREE.Vector3(-0.707, 0, -0.707)
+      ];
+
+      for (let dir of directions) {
+        raycaster.set(playerCenter, dir);
+        const intersects = raycaster.intersectObject(collider, false);
+
+        if (intersects.length > 0 && intersects[0].distance < detectionRadius) {
+          console.log(`[! - COLISION DETECTADA]: ${collider.name || 'objeto'}`);
+          isColliding = true;
+          // isCheckP = true;
+          collidingObject = "Objeto del escenario (modelos estático)";
+          break;
+        }
       }
 
-      //si colisiona regresar a la última posición válida
-      if (isColliding) {
-          this._target.position.copy(this._previousPosition);
-          this._velocity.set(0, 0, 0); // Detiene movimiento
-      } else {
-          //si NO COLISIONA actualiza la posición previa
-          this.UpdatePreviousPosition();
-      }
-    } //si no carga
-    else{
-      console.log("xd");
+      if (isColliding) break;
     }
+  }
+
+        //      1. COLISION CON EL TERRENO:
+        if (isColliding) {
+            // console.log(`Movimiento bloqueado por: ${collidingObject}`);
+            this._target.position.copy(this._previousPosition);
+            this._velocity.set(0, 0, 0);
+        } else {
+            this.UpdatePreviousPosition();
+        }
+
+        //      2. COLISION CON LAS QUESTION BOXS - SPAWN DE ITEMS
+        if (this._qboxHitboxes && this._qboxHitboxes.length > 0) {
+          for (let qbox of this._qboxHitboxes) {
+            if (!qbox || !qbox.userData) continue;
+            
+            //Actualizar el bounding box del qbox
+            qbox.updateMatrixWorld(true);
+            if (!qbox.userData.box) {
+              qbox.userData.box = new THREE.Box3().setFromObject(qbox);
+            } else {
+              qbox.userData.box.setFromObject(qbox);
+            }
+            
+            //SOLO spawnear si HAY colisión Y no ha spawneado antes
+            if (this._playerBox.intersectsBox(qbox.userData.box) && !qbox.userData.spawned) {
+              // console.log('[ ! PLAYER GOLPEÓ QUESTION BOX !]');
+              qbox.userData.spawned = true;
+
+              // Forzar actualización del bounding box global
+              qbox.updateMatrixWorld(true);
+              qbox.userData.box = new THREE.Box3().setFromObject(qbox);
+
+              // Obtener el centro del Box3 (posición real en el mundo)
+              const qboxCenter = new THREE.Vector3();
+              qbox.userData.box.getCenter(qboxCenter);
+
+              // Generar posición del ítem justo debajo
+              const spawnPos = new THREE.Vector3(
+                qboxCenter.x + 0,
+                qboxCenter.y - 6.0,  
+                qboxCenter.z + 0
+              );
+
+              this.SpawnItem(spawnPos);
+
+              // console.log(`[ ! Cherry/Fossil creado sobre Question Box en ${spawnPos.x.toFixed(2)}, ${spawnPos.y.toFixed(2)}, ${spawnPos.z.toFixed(2)}]`);
+            }
+          }
+        }
+
+        //    3. COLISIÓN CON ITEMS CONSUMIBLES
+        if (this._interactHitboxes && this._interactHitboxes.length > 0) {
+          for (let i = this._interactHitboxes.length - 1; i >= 0; i--) {
+            const item = this._interactHitboxes[i];
+            if (!item) continue;
+
+            if (!item.userData || !item.userData.type) {
+              console.warn(' ! Item sin userData válido, eliminando del array');
+              this._interactHitboxes.splice(i, 1);
+              continue;
+            }
+
+            if (!item.userData.consumed) {
+              if (item.userData.isLaunching) {
+                
+                // Actualizar velocidad vertical con gravedad
+                item.userData.velocityY += item.userData.gravity * timeInSeconds;
+                
+                // Actualizar posición en los 3 ejes
+                item.position.y += item.userData.velocityY * timeInSeconds;
+                item.position.x += item.userData.velocityX * timeInSeconds;
+                item.position.z += item.userData.velocityZ * timeInSeconds;
+                
+                // Rotar mientras vuelaXD
+                item.rotation.y += item.userData.rotationSpeed * timeInSeconds;
+                
+                // Verificar si tocó el suelo
+                if (item.position.y <= item.userData.groundY) {
+                  item.position.y = item.userData.groundY; // Fijar al suelo
+                  item.userData.isLaunching = false;       // Terminar lanzamiento
+                  item.userData.velocityY = 0;             // Detener movimiento
+                }
+                
+              } 
+              // flotacion y rotacion (animacion)
+              else {
+                item.userData.animationTime += timeInSeconds;
+                item.rotation.y += item.userData.rotationSpeed * timeInSeconds;
+                
+                // Flotación suave
+                const floatOffset = Math.sin(item.userData.animationTime * item.userData.floatSpeed) * item.userData.floatHeight;
+                item.position.y = item.userData.groundY + floatOffset;
+              }
+            }
+
+
+            if (item.userData.consumed) {
+              console.log(` ! REMOVIENDO ITEM: ${item.userData.type}`);
+  
+              item.visible = false;
+              
+              if (item.parent) {
+                item.parent.remove(item);
+              }
+              
+              if (this._world && this._world._scene) {
+                this._world._scene.remove(item);
+              }
+              
+              // REMOVER WIREFRAME
+              if (item.userData.boxHelper) {
+                this._world._scene.remove(item.userData.boxHelper);
+                item.userData.boxHelper.geometry.dispose();
+                item.userData.boxHelper.material.dispose();
+              }
+              
+              this._interactHitboxes.splice(i, 1);
+              
+              // 5. Liberar memoria
+              item.traverse((child) => {
+                if (child.geometry) {
+                  child.geometry.dispose();
+                }
+                if (child.material) {
+                  if (Array.isArray(child.material)) {
+                    child.material.forEach(mat => {
+                      if (mat.map) mat.map.dispose();
+                      mat.dispose();
+                    });
+                  } else {
+                    if (child.material.map) child.material.map.dispose();
+                    child.material.dispose();
+                  }
+                }
+              });
+              
+              console.log(' ! Item completamente eliminado ! ');
+              continue;
+            }
+
+            item.updateMatrixWorld(true);
+
+            if (!item.userData.box) {
+              item.userData.box = new THREE.Box3().setFromObject(item);
+            } else {
+              item.userData.box.setFromObject(item);
+            }
+
+            //    ACTUALIZAR WIREFRAME
+            if (item.userData.boxHelper) {
+              item.userData.boxHelper.box.copy(item.userData.box);
+              item.userData.boxHelper.updateMatrixWorld(true);
+            }
+
+            // Detectar colisión con el jugador
+            if (this._playerBox.intersectsBox(item.userData.box)) {
+              console.log(`[ ! ITEM CONSUMIDO]: ${item.userData.type}`);
+              //SOLO marcar como consumido
+              item.userData.consumed = true;
+
+              const playerImg = document.querySelector('.gm-colect img');
+              if (item.userData.type === 'cherry') {
+                this._totalScore += 100; //el cherry va hacer q llegues a la meta mas rapido, es un item raro
+                this._target.position.set(40,65, 0);
+                this._isOnPlatform = true;
+
+                // cherry
+                playerImg.src = 'resources/img/cherry.png';
+                playerImg.alt = 'cherry';
+              }
+              if (item.userData.type === 'fossil') {
+                if(this._totalScore >= 10){
+                  this._totalScore -= 10; // el fossil te resta puntos y te relentiza por x cantidad de segundos
+                }
+                this._acceleration.multiplyScalar(0.2); // 20% de la velocidad normal
+
+                this._isSlowed = true;
+                this._slowEndTime = this._elapsedTime + 15; // dura 15 segundos
+
+                // fossil
+                playerImg.src = 'resources/img/fossil.png';
+                playerImg.alt = 'fossil';
+
+                // console.log('Jugador ralentizado');
+              }
+              if (item.userData.type === 'bomb') {
+                this._target.position.set(-105, startHeight + 0.5, -115); //la bomb te mata xd
+                this._totaldeaths +=1;
+                if(this._totalScore >= 10){
+                  this._totalScore -= 50; // y te resta puntos
+                }
+                // bomb
+                playerImg.src = 'resources/img/bomb.png';
+                playerImg.alt = 'bomb';
+                const messagelosewin = document.querySelector('.wl-display');
+                messagelosewin.style.display = 'flex'; 
+              }
+            }
+          }
+        }
+
+        //    4. COLISIÓN CON EL AGUA
+        if (this._IsObjectInWater(this._playerBox)) {
+            // console.log("Aguas XD");
+            this._target.position.set(-105, startHeight + 0.5, -115);
+
+            this._totaldeaths +=1;
+            if(this._totalScore >= 10){
+              this._totalScore -= 100; // y te resta puntos
+            }
+        }
+
+        //    5. COLISIÓN CON LOS CHECKPOINTS (es la meta)
+        if (this._checkpointHitboxes && this._checkpointHitboxes.length > 0) {
+          for (let checkpoint of this._checkpointHitboxes) {
+            if (!checkpoint) continue;
+
+            checkpoint.updateMatrixWorld(true);
+            if (!checkpoint.userData.box) {
+              checkpoint.userData.box = new THREE.Box3().setFromObject(checkpoint);
+            } else {
+              checkpoint.userData.box.setFromObject(checkpoint);
+            }
+
+            if (this._playerBox.intersectsBox(checkpoint.userData.box)) {
+              if (!checkpoint.userData.activated) {
+                checkpoint.userData.activated = true;
+                // console.log("Meta!");
+                this._totalScore += 100;
+
+                const messagelosewin = document.querySelector('.wl-display');
+                messagelosewin.style.display = 'flex'; 
+                
+                const imgWin = document.getElementById('img-win');
+                const imgLose = document.getElementById('img-lose');
+                imgLose.style.display = 'none';
+                imgWin.style.display = 'inline'; 
+              }
+            }
+          }
+        }
+
+    }
+    //    ACTUALIZANDO LAS PARTICULAS
+    this._UpdateParticles(timeInSeconds);
 
     if (this._mixer) this._mixer.update(timeInSeconds);
     this._UpdateSkydome();
-  }
+}
 
-  _UpdateHeightOnTerrain() {
-    this._target.position.y = this._GetTerrainHeightAt(this._target.position.x, this._target.position.z);
-  }
+//      SPAWNEAR:
+//      Al colisionar spawnea el item, en este caso si colisiona con qbox se spawnea cherry o fossil
+SpawnItem(position) {
+  const spawnPos = position.clone();
+  spawnPos.y += 8; // inicio dentro del box
 
-  _HandleJump(timeInSeconds) {
-    const controlObject = this._target;
-    const terrainY = this._GetTerrainHeightAt(controlObject.position.x, controlObject.position.z);
+  const items = [
+    { path: './resources/3D/scene/items/cherry/Cherry.fbx', name: 'cherry' },
+    { path: './resources/3D/scene/items/fossil/Fossil.fbx', name: 'fossil' },
+    { path: './resources/3D/scene/items/bomb/bomb.fbx', name: 'bomb' }
+  ];
 
-    if (this._input._keys.space && !this._isJumping) {
-        this._isJumping = true;
-        this._jumpVelocity = 25;
-        this._stateMachine.SetState('jump');
-    }
+  const randomItem = items[Math.floor(Math.random() * items.length)];
 
-    if (this._isJumping) {
-        this._jumpVelocity += this._gravity * timeInSeconds;
-        controlObject.position.y += this._jumpVelocity * timeInSeconds;
+  const loader = new FBXLoader();
+  loader.load(
+    randomItem.path,
+    (fbx) => {
+      const itemContainer = new THREE.Group();
+      itemContainer.name = `item_${randomItem.name}_${Date.now()}`;
 
-        if (controlObject.position.y <= terrainY) {
-            controlObject.position.y = terrainY;
-            this._isJumping = false;
-            this._jumpVelocity = 0;
+      fbx.scale.set(0.05, 0.05, 0.05);
+      fbx.position.set(0, 0, 0);
 
-            if (this._input._keys.forward || this._input._keys.backward)
-                this._stateMachine.SetState(this._input._keys.shift ? 'run' : 'walk');
-            else
-                this._stateMachine.SetState('idle');
+      fbx.traverse((child) => {
+        if (child.isMesh) {
+          // Si el material es un array
+          if (Array.isArray(child.material)) {
+            child.material.forEach(mat => {
+              mat.transparent = false;
+              mat.opacity = 1.0;
+              mat.depthWrite = true;
+              mat.alphaTest = 0;
+              mat.needsUpdate = true;
+            });
+          } 
+          // Si es un solo material
+          else if (child.material) {
+            child.material.transparent = false;
+            child.material.opacity = 1.0;
+            child.material.depthWrite = true;
+            child.material.alphaTest = 0;
+            child.material.needsUpdate = true;
+          }
         }
+      });
+      itemContainer.add(fbx);
+
+      // Posición inicial
+      itemContainer.position.copy(spawnPos);
+
+      this._world._scene.add(itemContainer);
+
+      itemContainer.userData = {
+        type: randomItem.name,
+        consumed: false,
+        spawned: true,
+        
+        // Animación flotante (después de caer)
+        floatSpeed: 1.5,
+        floatHeight: 0.5,
+        rotationSpeed: 2,
+        animationTime: 0,
+        
+        // Física de lanzamiento
+        isLaunching: true,           // está en fase de lanzamiento
+        velocityY: 10,               // velocidad inicial hacia arriba
+        velocityX: 3,                // velocidad diagonal en X
+        velocityZ: 3,                // velocidad diagonal en Z
+        gravity: -15,                // gravedad (negativa = hacia abajo)
+        groundY: 16,                  // altura del suelo donde debe detenerse
+        
+        startY: spawnPos.y,
+        startX: spawnPos.x,
+        startZ: spawnPos.z
+      };
+
+      if (!this._interactHitboxes) this._interactHitboxes = [];
+      this._interactHitboxes.push(itemContainer);
+    },
+    undefined,
+    (error) => console.error(`[ ! ERROR SPAWNING ITEM ]`, error)
+  );
+}
+
+
+//    CREACION DE PARTICULAS (aca bien aca)
+_CreateParticles(position, count = 20, color = null) {
+  //Cargar textura de estrella
+  if (!this._starTexture) {
+    const textureLoader = new THREE.TextureLoader();
+    
+    this._starTexture = textureLoader.load(
+      '/resources/textures/dust_particle.png',
+      
+      (texture) => {
+        console.log('✅ Textura cargada exitosamente:', texture);
+        console.log('Dimensiones:', texture.image.width, 'x', texture.image.height);
+      },
+      
+      (progress) => {
+        console.log('⏳ Cargando textura...');
+      },
+      
+      (error) => {
+        console.error('❌ Error al cargar textura:', error);
+        console.error('Ruta intentada: /resources/textures/dust_particle.png');
+      }
+    );
+  }
+  
+  //Crear sprites individuales
+  const particleGroup = new THREE.Group();
+  const velocities = [];
+  
+  for (let i = 0; i < count; i++) {
+    const spriteMaterial = new THREE.SpriteMaterial({
+      map: this._starTexture,
+      // ✅ NO usar color para preservar los colores originales
+      transparent: true,
+      opacity: 1.0,
+      blending: THREE.NormalBlending, // ✅ Cambiado de AdditiveBlending
+      depthWrite: false // ✅ Mejora la transparencia
+    });
+    
+    const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.scale.set(3.5, 3.5, 3.5);
+    
+    sprite.position.set(
+      position.x + (Math.random() - 0.5) * 2,
+      position.y + (Math.random() - 0.5) * 2,
+      position.z + (Math.random() - 0.5) * 2
+    );
+    
+    particleGroup.add(sprite);
+    
+    velocities.push(
+      (Math.random() - 0.5) * 0.5,
+      Math.random() * 0.5 + 0.2,
+      (Math.random() - 0.5) * 0.5
+    );
+  }
+  
+  this._world._scene.add(particleGroup);
+  
+  particleGroup.userData = {
+    velocities: velocities,
+    lifetime: 1.0, //segundos
+    age: 0
+  };
+  
+  if (!this._particleSystems) this._particleSystems = [];
+  this._particleSystems.push(particleGroup);
+  
+  return particleGroup;
+}
+
+//    ACTUALIZAR LAS PARTICULAS
+_UpdateParticles(deltaTime) {
+  if (!this._particleSystems || this._particleSystems.length === 0) return;
+
+  for (let i = this._particleSystems.length - 1; i >= 0; i--) {
+    const system = this._particleSystems[i];
+    const userData = system.userData;
+    
+    userData.age += deltaTime;
+
+    //si llegó a su tiempo de vida, eliminarlas
+    if (userData.age >= userData.lifetime) {
+      this._world._scene.remove(system);
+      // Limpiar cada sprite del grupo
+      system.children.forEach(sprite => {
+        sprite.material.dispose();
+      });
+      this._particleSystems.splice(i, 1);
+      continue;
+    }
+
+    //actualizar cada sprite en el grupo
+    system.children.forEach((sprite, index) => {
+      const vx = userData.velocities[index * 3];
+      const vy = userData.velocities[index * 3 + 1];
+      const vz = userData.velocities[index * 3 + 2];
+      
+      // Aplicar velocidad
+      sprite.position.x += vx * deltaTime;
+      sprite.position.y += vy * deltaTime;
+      sprite.position.z += vz * deltaTime;
+      
+      // Aplicar gravedad (opcional)
+      if (userData.gravity) {
+        userData.velocities[index * 3 + 1] += userData.gravity * deltaTime;
+      }
+      
+      // Fade out al final de la vida
+      const lifeProgress = userData.age / userData.lifetime;
+      sprite.material.opacity = 1 - lifeProgress;
+      
+      // Rotación opcional para efecto dinámico
+      // sprite.material.rotation += deltaTime * 2;
+    });
+  }
+}
+
+_UpdateHeightOnTerrain() {
+  this._target.position.y = this._GetTerrainHeightAt(this._target.position.x, this._target.position.z);
+}
+
+_HandleJump(timeInSeconds) {
+  const controlObject = this._target;
+  if (!controlObject) return;
+
+  const terrainY = this._GetTerrainHeightAt(controlObject.position.x, controlObject.position.z);
+
+  // --- 1. INICIO DEL SALTO ---
+  if (this._input._keys.space && !this._isJumping) {
+    this._isJumping = true;
+    this._isOnPlatform = false;
+    this._isOnQBox = false;
+    this._currentPlatform = null;
+    this._jumpVelocity = 25;
+    this._stateMachine.SetState('jump');
+    console.log("🚀 Salto iniciado");
+  }
+
+  // --- 2. ACTUALIZAR MOVIMIENTO VERTICAL ---
+  if (this._isJumping) {
+    this._jumpVelocity += this._gravity * timeInSeconds;
+    controlObject.position.y += this._jumpVelocity * timeInSeconds;
+
+    const isMoving = this._input._keys.forward || this._input._keys.backward;
+    const isRunning = this._input._keys.shift;
+    
+    if (isMoving && isRunning && Math.random() < 0.1) {
+      this._CreateParticles(this._target.position.clone(), 1);
+    }
+
+    // ⭐ VERIFICAR ATERRIZAJE
+    if (this._jumpVelocity <= 0) {
+      // ✅ Mantener dimensiones personalizadas
+      const currentSize = new THREE.Vector3();
+      this._playerBox.getSize(currentSize);
+      
+      const newCenter = new THREE.Vector3();
+      newCenter.copy(controlObject.position);
+      newCenter.y += currentSize.y / 2;
+      
+      this._playerBox.setFromCenterAndSize(newCenter, currentSize);
+      
+      const playerFeet = new THREE.Vector3(
+        controlObject.position.x,
+        this._playerBox.min.y,
+        controlObject.position.z
+      );
+
+      const rayOrigin = playerFeet.clone();
+      rayOrigin.y += 0.3;
+
+      const downRay = new THREE.Raycaster(
+        rayOrigin,
+        new THREE.Vector3(0, -1, 0),
+        0,
+        1.5
+      );
+
+      const landableObjects = [
+        ...(this._platformsHitboxes || []),
+        ...(this._qboxHitboxes || [])
+      ];
+
+      const intersects = downRay.intersectObjects(landableObjects, false);
+      
+      if (intersects.length > 0) {
+        const nearest = intersects[0];
+        const surfaceY = nearest.point.y;
+        const distance = playerFeet.y - surfaceY;
+
+        if (distance >= -0.2 && distance <= 1.0) {
+          const isQBox = this._qboxHitboxes?.includes(nearest.object) || false;
+          const objectType = isQBox ? "QBox" : "Plataforma";
+          
+          console.log(`✅ Aterrizando en ${objectType}`);
+          
+          const adjustment = surfaceY - playerFeet.y;
+          controlObject.position.y += adjustment;
+          
+          this._isJumping = false;
+          this._jumpVelocity = 0;
+          this._isOnQBox = isQBox;
+          this._isOnPlatform = !isQBox;
+          this._currentPlatform = nearest.object;
+
+          this.UpdatePreviousPosition();
+
+          if (this._input._keys.forward || this._input._keys.backward)
+            this._stateMachine.SetState(this._input._keys.shift ? 'run' : 'walk');
+          else
+            this._stateMachine.SetState('idle');
+          
+          return;
+        }
+      }
+    }
+
+    if (controlObject.position.y <= terrainY) {
+      console.log("🌍 Aterrizando en terreno");
+      controlObject.position.y = terrainY;
+      this._isJumping = false;
+      this._isOnPlatform = false;
+      this._isOnQBox = false;
+      this._jumpVelocity = 0;
+      this._currentPlatform = null;
+
+      if (this._input._keys.forward || this._input._keys.backward)
+        this._stateMachine.SetState(this._input._keys.shift ? 'run' : 'walk');
+      else
+        this._stateMachine.SetState('idle');
     }
   }
+
+  // --- 3. VERIFICAR SI SIGUE SOBRE LA PLATAFORMA ---
+  if (!this._isJumping && (this._isOnPlatform || this._isOnQBox) && this._currentPlatform) {
+    // ✅ Mantener dimensiones personalizadas
+    const currentSize = new THREE.Vector3();
+    this._playerBox.getSize(currentSize);
+    
+    const newCenter = new THREE.Vector3();
+    newCenter.copy(controlObject.position);
+    newCenter.y += currentSize.y / 2;
+    
+    this._playerBox.setFromCenterAndSize(newCenter, currentSize);
+    
+    const playerSize = new THREE.Vector3();
+    this._playerBox.getSize(playerSize);
+    
+    const footRadius = Math.max(playerSize.x, playerSize.z) * 1;
+    const feetY = this._playerBox.min.y;
+    
+    const testPoints = [
+      new THREE.Vector3(controlObject.position.x, feetY, controlObject.position.z),
+      new THREE.Vector3(controlObject.position.x, feetY, controlObject.position.z + footRadius),
+      new THREE.Vector3(controlObject.position.x, feetY, controlObject.position.z - footRadius),
+      new THREE.Vector3(controlObject.position.x - footRadius, feetY, controlObject.position.z),
+      new THREE.Vector3(controlObject.position.x + footRadius, feetY, controlObject.position.z)
+    ];
+
+    let stillOnSurface = false;
+    
+    for (let point of testPoints) {
+      const checkRay = new THREE.Raycaster(
+        point,
+        new THREE.Vector3(0, -1, 0),
+        0,
+        1.0
+      );
+
+      const hits = checkRay.intersectObject(this._currentPlatform, false);
+
+      if (hits.length > 0) {
+        stillOnSurface = true;
+        break;
+      }
+    }
+
+    if (!stillOnSurface) {
+      const surfaceType = this._isOnQBox ? "QBox" : "plataforma";
+      console.log(`⚠️ Jugador salió de la ${surfaceType}`);
+      this._isJumping = true;
+      this._isOnPlatform = false;
+      this._isOnQBox = false;
+      this._jumpVelocity = 0;
+      this._currentPlatform = null;
+      this._stateMachine.SetState('jump');
+    }
+  }
+}
+
 
   _GetTerrainHeightAt(x, z) {
     // ⭐ MODIFICACIÓN: Acceso mejorado al terrainManager
@@ -639,6 +1427,16 @@ class RunState extends State {
 
   Update(timeElapsed, input) {
     if (input._keys.forward || input._keys.backward) {
+      const characterController = this._parent._controller;
+      
+      if (Math.random() < 0.1) { // 10% de probabilidad por frame
+        if (characterController && characterController._target) {
+          characterController._CreateParticles(
+            characterController._target.position.clone(),
+            1
+          );
+        }
+      }
       if (!input._keys.shift) {
         this._parent.SetState('walk');
       }
@@ -741,6 +1539,8 @@ class CharacterControllerDemo {
     
     // Esperar conexión
     this._WaitForConnection();
+
+    
   }
   //                      AGREGADO PARA MULTI
   async _WaitForConnection() {
@@ -761,6 +1561,21 @@ class CharacterControllerDemo {
   }
 
   async _Initialize() {
+    console.log("🔧 Cargando three-mesh-bvh...");
+    try {
+        // ✅ CORRECCIÓN: Usar la versión correcta y asignar globalmente
+        const { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } = 
+            await import('https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.7.0/build/index.module.js');
+        
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+        
+        console.log("✅ BVH habilitado globalmente");
+    } catch (error) {
+        console.warn("⚠️ No se pudo cargar three-mesh-bvh:", error);
+    }
+
     this._threejs = new THREE.WebGLRenderer({
       antialias: true,
     });
@@ -824,6 +1639,8 @@ class CharacterControllerDemo {
     this._cameraTarget = new THREE.Vector3();
     this._cameraOffset = new THREE.Vector3(0, 8, -15);
 
+    await this._CreateWater(); //agua
+
     // ⭐ MODIFICACIÓN CRÍTICA: Orden correcto de inicialización
     console.log("🌍 Paso 1: Creando terreno...");
     await this._CreateTerrain();
@@ -838,31 +1655,31 @@ class CharacterControllerDemo {
 
     
     // COLISION PARA LAS "PAREDES" DEL TERRENO 1.
-    const boxGeometry = new THREE.BoxGeometry(250, 15, 5); // ancho, alto, profundo
+    const boxGeometry = new THREE.BoxGeometry(305, 35, 5); // ancho, alto, profundo
     // boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
     const collisionBox = new THREE.Mesh(boxGeometry, boxMaterial);
-    collisionBox.position.set(0, 3, 128); 
+    collisionBox.position.set(0, 8, 150); 
     this._scene.add(collisionBox);
 
     //2.
-    const boxGeometry2 = new THREE.BoxGeometry(250, 15, 5); // ancho, alto, profundo
+    const boxGeometry2 = new THREE.BoxGeometry(305, 35, 5); // ancho, alto, profundo
     // boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
     const collisionBox2 = new THREE.Mesh(boxGeometry2, boxMaterial);
-    collisionBox2.position.set(0, 3, -128); 
+    collisionBox2.position.set(0, 8, -150); 
     this._scene.add(collisionBox2);
 
     //3.
-    const boxGeometry3 = new THREE.BoxGeometry(5, 15, 250); // ancho, alto, profundo
+    const boxGeometry3 = new THREE.BoxGeometry(5, 35, 305); // ancho, alto, profundo
     // boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
     const collisionBox3 = new THREE.Mesh(boxGeometry3, boxMaterial);
-    collisionBox3.position.set(128, 3, 0); 
+    collisionBox3.position.set(150, 8, 0); 
     this._scene.add(collisionBox3);
 
     //4.
-    const boxGeometry4 = new THREE.BoxGeometry(5, 15, 250); // ancho, alto, profundo
+    const boxGeometry4 = new THREE.BoxGeometry(5, 35, 305); // ancho, alto, profundo
     // boxMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, wireframe: true });
     const collisionBox4 = new THREE.Mesh(boxGeometry4, boxMaterial);
-    collisionBox4.position.set(-128, 3, 0); 
+    collisionBox4.position.set(-150, 8, 0); 
     this._scene.add(collisionBox4);
 
     this._collisionBoxes = [collisionBox, collisionBox2, collisionBox3, collisionBox4];
@@ -874,87 +1691,311 @@ class CharacterControllerDemo {
       console.log("CollisionBox creada:", box.userData.box.min, box.userData.box.max);
     });
 
-    //declarando los modelos del escenario
-    this._decorativeModels = [];
+    //declarando los modelos del escenario y sus colis
+    this._decorativeModels = []; // de la funcion LoadSceneModelsy
     this._interactiveHitboxes = [];
+
+    this._leveloneHitboxes = []; //colisiones generales del escenario
+    this._interactHitboxes = []; //colisiones para items y interactivos (cherry, fossil, son los CONSUMIBLES)
+    this._platformsHitboxes = []; //colisiones para las plataformas
+    this._qboxHitboxes = []; //colisiones para las cajas para dropear el item
+    this._checkpointHitboxes = []; //colisiones para las metas (ganar el juego)
 
     //carga de modelos FBX con sus hitboxes!
 
     //entorno
-    this.LoadSceneModels('./resources/3D/scene/moai/moai.fbx', new THREE.Vector3(100,-1.5,100), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/moai/moai.fbx', new THREE.Vector3(-100,-1.5,-100), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/moai/moai.fbx', new THREE.Vector3(80,17,-30), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/moai/moai.fbx', new THREE.Vector3(-80,-1.5,100), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/moai/moai.fbx', 
+        new THREE.Vector3(-120,6,-120), 
+        new THREE.Vector3(0.06,0.06,0.06)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/moai/moai.fbx', 
+        new THREE.Vector3(120,8,130), 
+        new THREE.Vector3(0.05,0.05,0.05),
+        new THREE.Vector3(0, Math.PI, 0)
+      )
+    );
 
-    this.LoadSceneModels('./resources/3D/scene/torii/torii.fbx', new THREE.Vector3(0,-1.5,100), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    //no ocupan colis
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,70,5), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(50,55,-10), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(105,40,105), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-100,55,-115), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(70,50,-85), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-110,65,115), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,65,115), new THREE.Vector3(0.05,0.05,0.05));
+    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-70,55,0), new THREE.Vector3(0.05,0.05,0.05));
 
-    this.LoadSceneModels('./resources/3D/scene/checkpoint/checkpoint.fbx', new THREE.Vector3(80,18,-105), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    //POSITIVO IZQUIERDA, NEGATIVO DERECHA (basado en como aparece el personaje en escena)
+    //palms
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
+        new THREE.Vector3(-75,8,-4), 
+        new THREE.Vector3(0.03,0.03,0.03)
+      )
+    );
+    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(-75,8,-4), new THREE.Vector3(0.03,0.03,0.03));
 
-    this.LoadSceneModels('./resources/3D/scene/flowerplatform/flowerplatform.fbx', new THREE.Vector3(85,15,-57), new THREE.Vector3(0.07,0.07,0.07), new THREE.Vector3(2,5,2));
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
+        new THREE.Vector3(-40,8,120), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(-40,8,120), new THREE.Vector3(0.05,0.05,0.05));
 
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,50,5), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(50,55,-10), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(105,40,105), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-100,55,-115), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(70,50,-85), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-110,45,115), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,50,115), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-70,55,0), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
+        new THREE.Vector3(60,8,110), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(60,8,110), new THREE.Vector3(0.05,0.05,0.05));
 
-    this.LoadSceneModels('./resources/3D/scene/platform/platform.fbx', new THREE.Vector3(-70,20,20), new THREE.Vector3(0.03,0.03,0.03), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/platform/platform.fbx', new THREE.Vector3(-40,25,30), new THREE.Vector3(0.03,0.03,0.03), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/platform/platform.fbx', new THREE.Vector3(-40,30,60), new THREE.Vector3(0.03,0.03,0.03), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/platform/platform.fbx', new THREE.Vector3(-30,35,90), new THREE.Vector3(0.03,0.03,0.03), new THREE.Vector3(2,5,2));
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
+        new THREE.Vector3(90,8,130), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(90,8,130), new THREE.Vector3(0.05,0.05,0.05));
 
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/fountain/fountainfish.fbx', new THREE.Vector3(0,-1.5,0), new THREE.Vector3(0.08,0.08,0.08), new THREE.Vector3(2,5,2));
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
+        new THREE.Vector3(100,8,-125), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(100,8,-125), new THREE.Vector3(0.05,0.05,0.05));
 
-    //items
-    this.LoadSceneModels('./resources/3D/scene/items/cherry/Cherry.fbx', new THREE.Vector3(1,1,1), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/cherry/Cherry.fbx', new THREE.Vector3(-115,20,100), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/cherry/Cherry.fbx', new THREE.Vector3(65,8,-75), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/cherry/Cherry.fbx', new THREE.Vector3(90,8,50), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/cherry/Cherry.fbx', new THREE.Vector3(105,1,15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-
-    this.LoadSceneModels('./resources/3D/scene/items/fossil/Fossil.fbx', new THREE.Vector3(0,4,90), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/fossil/Fossil.fbx', new THREE.Vector3(-40,30,30), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/fossil/Fossil.fbx', new THREE.Vector3(40,12,-120), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/fossil/Fossil.fbx', new THREE.Vector3(110,12,-15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/items/fossil/Fossil.fbx', new THREE.Vector3(-75,4,-80), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-
-    //arboles
-    //1.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(15,-1.5,15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(15,-1.5,15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //2.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(115,-1.5,10), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(115,-1.5,10), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //3.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(65,4,-75), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(65,4,-75), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //4.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(-85,-1.5,-55), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(-85,-1.5,-55), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //5.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(-20,-1.5,-15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(-20,-1.5,-15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //6.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(35,-1.5,80), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(35,-1.5,80), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //7.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(90,-1.5,50), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(90,-1.5,50), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    //8.
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/tree/leafs.fbx', new THREE.Vector3(-70,-1.5,55), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModels('./resources/3D/scene/tree/branch.fbx', new THREE.Vector3(-70,-1.5,55), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    //rock, cave
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/cave/cave.fbx', 
+        new THREE.Vector3(10,36,115), 
+        new THREE.Vector3(0.05,0.05,0.05),
+        new THREE.Vector3(0, -Math.PI/2, 0)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/cave/cave.fbx', 
+        new THREE.Vector3(90,15,-115), 
+        new THREE.Vector3(0.02,0.02,0.02),
+        new THREE.Vector3(0, -Math.PI/2, 0)
+      )
+    );
     
-    //bush
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(1,-1.5,1), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(95,-1.5,55), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(105,-1.5,15), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(70,-1.5,-85), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(-70,-1.5,-95), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/bush/bush.fbx', new THREE.Vector3(20,-1.5,85), new THREE.Vector3(0.05,0.05,0.05), new THREE.Vector3(2,5,2));
+    //dragon esqueleto
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/skeletondragon/skeletondragon.fbx', 
+        new THREE.Vector3(10,8.5,90), 
+        new THREE.Vector3(0.05,0.05,0.05),
+        new THREE.Vector3(0, -Math.PI, 0)
+      )
+    );
+    
+    //cofre
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/chest/chest.fbx', 
+        new THREE.Vector3(10,14,77), 
+        new THREE.Vector3(0.04,0.04,0.04),
+        new THREE.Vector3(0,Math.PI,0)
+      )
+    );
 
+    //coins
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
+        new THREE.Vector3(10,8.5,75), 
+        new THREE.Vector3(0.04,0.04,0.04)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
+        new THREE.Vector3(-10,8.5,80), 
+        new THREE.Vector3(0.04,0.04,0.04)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
+        new THREE.Vector3(80,8.5,120), 
+        new THREE.Vector3(0.04,0.04,0.04)
+      )
+    );
+    //tentaculos
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
+        new THREE.Vector3(70,40,-50), 
+        new THREE.Vector3(0.06,0.06,0.06),  
+        new THREE.Vector3(0, Math.PI/2, 0)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
+        new THREE.Vector3(-75,20,50), 
+        new THREE.Vector3(0.04,0.04,0.04),  
+        new THREE.Vector3(Math.PI/4, 0, 0)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
+        new THREE.Vector3(80,40,50), 
+        new THREE.Vector3(0.06,0.06,0.06),  
+        new THREE.Vector3(0, Math.PI, 0)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
+        new THREE.Vector3(-50,45,-50), 
+        new THREE.Vector3(0.07,0.07,0.07),  
+        new THREE.Vector3(0, Math.PI, 0)
+      )
+    );
+
+    //barcos
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/pirateship/pirateship.fbx', 
+      new THREE.Vector3(55,-3,5), 
+      new THREE.Vector3(0.05,0.05,0.05), 
+      new THREE.Vector3(20 * Math.PI / 180, Math.PI/2, 0)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/pirateship/pirateship.fbx', 
+      new THREE.Vector3(-15,0,-20), 
+      new THREE.Vector3(0.05,0.05,0.05), 
+      new THREE.Vector3(0, -Math.PI/2, 0)
+      )
+    );
+
+    //plataformas
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(0,10,-80), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(40,15,-80), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(40,20,-40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(20,25, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    //question box aqui
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(0,30, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(-40,35, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(-80,40, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(-80,45, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(-40,50, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(0,55, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(40,60, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
+      new THREE.Vector3(20,65, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    // bandera de meta
+    // en la punta del mapa
+    this._checkpointHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/checkpoint/checkpoint.fbx', 
+      new THREE.Vector3(20,67, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._checkpointHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/checkpoint/checkpoint.fbx', 
+      new THREE.Vector3(120,13,140), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    //barriles
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
+      new THREE.Vector3(-50,9,-115), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
+      new THREE.Vector3(-75,8,-15), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
+      new THREE.Vector3(105,10,120), 
+      new THREE.Vector3(0.07,0.07,0.07)
+      )
+    );
+
+    //question box
+    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
+      new THREE.Vector3(-90,24,-110), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
+      new THREE.Vector3(0,44, 40), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
+      new THREE.Vector3(-90,24,115), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
+      new THREE.Vector3(115,24,-115), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    //IMPORTANTE: Esperar a que todos los hitboxes se carguen
+    console.log("⏳ Esperando carga de hitboxes del escenario...");
+    
+    //        1. Filtrar y esperar todas las promesas
+    const hitboxPromises = this._leveloneHitboxes.filter(h => h && h.then);
+    this._leveloneHitboxes = await Promise.all(hitboxPromises);
+    
+    // Aplanar arrays (algunos hitboxes son arrays de colliders)
+    this._leveloneHitboxes = this._leveloneHitboxes.flat().filter(h => h);
+
+    //        2. Filtrar y esperar todas las promesas
+    const hitboxPromisesPLATFORMS = this._platformsHitboxes.filter(h => h && h.then);
+    this._platformsHitboxes = await Promise.all(hitboxPromisesPLATFORMS);
+    
+    this._platformsHitboxes = this._platformsHitboxes.flat().filter(h => h);
+
+    //        3. Filtrar y esperar todas las promesas
+    const hitboxPromisesQBOX = this._qboxHitboxes.filter(h => h && h.then);
+    this._qboxHitboxes = await Promise.all(hitboxPromisesQBOX);
+    
+    this._qboxHitboxes = this._qboxHitboxes.flat().filter(h => h);
+    
+
+    //        3. Filtrar y esperar todas las promesas
+    const hitboxPromisesCheckP = this._checkpointHitboxes.filter(h => h && h.then);
+    this._checkpointHitboxes = await Promise.all(hitboxPromisesCheckP);
+    
+    this._checkpointHitboxes = this._checkpointHitboxes.flat().filter(h => h);
+
+    // console.log(`✅ ${this._leveloneHitboxes.length} hitboxes cargados y listos`);
     console.log("🎮 Paso 2: Cargando personaje...");
     this._LoadAnimatedModel();
 
@@ -1031,163 +2072,330 @@ class CharacterControllerDemo {
 
   // ⭐ MODIFICACIÓN: Ahora _CreateTerrain es async y espera REALMENTE?
   async _CreateTerrain() {
-    const textureLoader = new THREE.TextureLoader();
+  const textureLoader = new THREE.TextureLoader();
 
-    // Crear geometría y mesh del terreno
-    this._terrainGeometry = new THREE.PlaneGeometry(250, 250, 512, 512);
+  // ⭐ SOLUCIÓN: Crear geometría manualmente para garantizar atributos
+  console.log("🔧 Creando geometría del terreno manualmente...");
+  this._terrainGeometry = this._CreateManualPlaneGeometry(300, 300, 512, 512);
+  
+  console.log(`✅ Geometría creada: ${this._terrainGeometry.attributes.position.count} vértices`);
 
-    const fallbackMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4a5d23,
-        roughness: 0.8,
-        metalness: 0.1
-    });
+  // Material temporal
+  const fallbackMaterial = new THREE.MeshStandardMaterial({
+    color: 0x4a5d23,
+    roughness: 0.8,
+    metalness: 0.1
+  });
 
-    this._terrain = new THREE.Mesh(this._terrainGeometry, fallbackMaterial);
-    this._terrain.rotation.x = -Math.PI / 2;
-    this._terrain.position.y = -2;
-    this._terrain.receiveShadow = true;
-    this._terrain.castShadow = false;
-    this._scene.add(this._terrain);
+  this._terrain = new THREE.Mesh(this._terrainGeometry, fallbackMaterial);
+  this._terrain.rotation.x = -Math.PI / 2;
+  this._terrain.position.y = -2;
+  this._terrain.receiveShadow = true;
+  this._terrain.castShadow = false;
+  this._scene.add(this._terrain);
 
-    // ⭐ NUEVO: Crear objeto terrainManager
-    this._terrainManager = {
-      terrain: this._terrain,
-      heightData: null,
-      baseY: -2,
-      isReady: false,
-      getHeightAt: (x, z) => this._GetTerrainHeightAt(x, z)
-    };
-    
-    console.log("🏔️ Mesh del terreno creado");
+  // Crear terrainManager
+  this._terrainManager = {
+    terrain: this._terrain,
+    heightData: null,
+    baseY: -2,
+    isReady: false,
+    getHeightAt: (x, z) => this._GetTerrainHeightAt(x, z)
+  };
 
-    // Cargar texturas en paralelo
-    const [grassTexture, rockTexture] = await Promise.all([
-      this._LoadTextureAsync(textureLoader, './resources/textures/grass.jpg'),
-      this._LoadTextureAsync(textureLoader, './resources/textures/dirt.png')
-    ]);
+  console.log("🏔️ Mesh del terreno creado");
 
-    if (grassTexture) {
-      grassTexture.wrapS = THREE.RepeatWrapping;
-      grassTexture.wrapT = THREE.RepeatWrapping;
-      grassTexture.repeat.set(40, 40);
-    }
+  // Cargar heightmap
+  console.log("⏳ Cargando heightmap...");
+  const heightMap = await this._LoadTextureAsync(textureLoader, './resources/textures/levelone.jpg');
 
-    if (rockTexture) {
-      rockTexture.wrapS = THREE.RepeatWrapping;
-      rockTexture.wrapT = THREE.RepeatWrapping;
-      rockTexture.repeat.set(40, 40);
-    }
-
-    // ⭐ CRÍTICO: Cargar heightmap y ESPERAR a que termine
-    console.log("⏳ Cargando heightmap...");
-    const heightMap = await this._LoadTextureAsync(textureLoader, './resources/textures/heightmap.jpg');
-    
-    if (heightMap) {
-      this._ApplyHeightMap(heightMap);
-      
-      // Aplicar shader material
-      if (grassTexture && rockTexture) {
-        const terrainMaterial = new THREE.ShaderMaterial({
-          uniforms: {
-            grassTexture: { value: grassTexture },
-            rockTexture: { value: rockTexture },
-            heightMap: { value: heightMap },
-            lightColor: { value: new THREE.Color(0xffffff) },
-            lightDirection: { value: new THREE.Vector3(-1, 1, 1).normalize() }
-          },
-          vertexShader: `
-            uniform sampler2D heightMap;
-            varying vec2 vUv;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-
-            void main() {
-              vUv = uv;
-              float height = texture2D(heightMap, uv).r;
-              vec3 newPosition = position;
-              newPosition.z += height * 20.0;
-              vPosition = newPosition;
-              vNormal = normal;
-              gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0);
-            }
-          `,
-          fragmentShader: `
-            uniform sampler2D grassTexture;
-            uniform sampler2D rockTexture;
-            uniform sampler2D heightMap;
-            uniform vec3 lightColor;
-            uniform vec3 lightDirection;
-
-            varying vec2 vUv;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-
-            void main() {
-              vec4 grassColor = texture2D(grassTexture, vUv * 35.0);
-              vec4 rockColor = texture2D(rockTexture, vUv * 35.0);
-              float height = texture2D(heightMap, vUv).r;
-              vec4 finalColor = mix(grassColor, rockColor, height);
-
-              float lightIntensity = max(dot(normalize(vNormal), normalize(lightDirection)), 0.3);
-              finalColor.rgb *= lightIntensity * lightColor;
-
-              gl_FragColor = finalColor;
-            }
-          `
-        });
-
-        this._terrain.material = terrainMaterial;
-        console.log("✅ Shader material aplicado");
-      }
-    } else {
-      console.warn("⚠️ Heightmap no cargó, usando terreno plano");
-      this._CreateFlatHeightMap();
-    }
-
-    // ⭐ IMPORTANTE: Marcar terreno como listo
+  if (!heightMap || !heightMap.image) {
+    console.warn("⚠️ Heightmap no cargó, usando terreno plano");
+    this._CreateFlatHeightMap();
     this._terrainManager.isReady = true;
-    console.log("✅ Terreno completamente listo para usar");
+    return;
   }
 
-  _InstantiateModel(path, position, scale, hitboxSize) {
+  // Esperar a que la imagen esté completamente cargada
+  if (!heightMap.image.complete) {
+    console.log("⏳ Esperando carga completa de imagen...");
+    await new Promise((resolve) => {
+      heightMap.image.onload = () => {
+        console.log("✅ Imagen del heightmap cargada");
+        resolve();
+      };
+      heightMap.image.onerror = () => {
+        console.error("❌ Error al cargar imagen del heightmap");
+        resolve();
+      };
+      // Timeout de seguridad
+      setTimeout(resolve, 5000);
+    });
+  }
+
+  console.log("✅ Imagen del heightmap lista");
+
+  // Aplicar heightmap
+  console.log("🔨 Aplicando deformación del terreno...");
+  this._ApplyHeightMap(heightMap);
+
+  // Cargar texturas
+  console.log("⏳ Cargando texturas de material...");
+  const [grassTexture, rockTexture] = await Promise.all([
+    this._LoadTextureAsync(textureLoader, './resources/textures/sand.png'),
+    this._LoadTextureAsync(textureLoader, './resources/textures/sand.png')
+  ]);
+
+  if (grassTexture) {
+    grassTexture.wrapS = THREE.RepeatWrapping;
+    grassTexture.wrapT = THREE.RepeatWrapping;
+    grassTexture.repeat.set(40, 40);
+  }
+
+  if (rockTexture) {
+    rockTexture.wrapS = THREE.RepeatWrapping;
+    rockTexture.wrapT = THREE.RepeatWrapping;
+    rockTexture.repeat.set(40, 40);
+  }
+
+  // Aplicar material con shader
+  if (grassTexture && rockTexture) {
+    const terrainMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        grassTexture: { value: grassTexture },
+        rockTexture: { value: rockTexture },
+        heightMap: { value: heightMap },
+        lightColor: { value: new THREE.Color(0xffffff) },
+        lightDirection: { value: new THREE.Vector3(-1, 1, 1).normalize() }
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+
+        void main() {
+          vUv = uv;
+          vPosition = position;
+          vNormal = normal;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D grassTexture;
+        uniform sampler2D rockTexture;
+        uniform sampler2D heightMap;
+        uniform vec3 lightColor;
+        uniform vec3 lightDirection;
+
+        varying vec2 vUv;
+        varying vec3 vNormal;
+        varying vec3 vPosition;
+
+        void main() {
+          vec4 grassColor = texture2D(grassTexture, vUv * 35.0);
+          vec4 rockColor = texture2D(rockTexture, vUv * 35.0);
+          float height = texture2D(heightMap, vUv).r;
+          vec4 finalColor = mix(grassColor, rockColor, height);
+
+          float lightIntensity = max(dot(normalize(vNormal), normalize(lightDirection)), 0.3);
+          finalColor.rgb *= lightIntensity * lightColor;
+
+          gl_FragColor = finalColor;
+        }
+      `
+    });
+
+    this._terrain.material = terrainMaterial;
+    console.log("✅ Shader material aplicado");
+  }
+
+  this._terrainManager.isReady = true;
+  console.log("✅ Terreno completamente listo");
+}
+
+  _CreateManualPlaneGeometry(width, height, widthSegments, heightSegments) {
+  console.log(`🔧 Creando PlaneGeometry manual: ${width}x${height}, segmentos: ${widthSegments}x${heightSegments}`);
+  
+  const geometry = new THREE.BufferGeometry();
+  
+  const widthHalf = width / 2;
+  const heightHalf = height / 2;
+  
+  const gridX = widthSegments + 1;
+  const gridY = heightSegments + 1;
+  
+  const segmentWidth = width / widthSegments;
+  const segmentHeight = height / heightSegments;
+  
+  // Arrays para vértices, normales y UVs
+  const vertices = [];
+  const normals = [];
+  const uvs = [];
+  const indices = [];
+  
+  // Generar vértices
+  for (let iy = 0; iy < gridY; iy++) {
+    const y = iy * segmentHeight - heightHalf;
+    
+    for (let ix = 0; ix < gridX; ix++) {
+      const x = ix * segmentWidth - widthHalf;
+      
+      // Posición del vértice (x, y, z=0)
+      vertices.push(x, -y, 0);
+      
+      // Normal apuntando hacia arriba (en Z)
+      normals.push(0, 0, 1);
+      
+      // Coordenadas UV
+      uvs.push(ix / widthSegments, 1 - (iy / heightSegments));
+    }
+  }
+  
+  // Generar índices para triángulos
+  for (let iy = 0; iy < heightSegments; iy++) {
+    for (let ix = 0; ix < widthSegments; ix++) {
+      const a = ix + gridX * iy;
+      const b = ix + gridX * (iy + 1);
+      const c = (ix + 1) + gridX * (iy + 1);
+      const d = (ix + 1) + gridX * iy;
+      
+      // Dos triángulos por cuadrado
+      indices.push(a, b, d);
+      indices.push(b, c, d);
+    }
+  }
+  
+  // Asignar atributos al BufferGeometry
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geometry.setIndex(indices);
+  
+  // Guardar parámetros para compatibilidad con _ApplyHeightMap
+  geometry.parameters = {
+    width: width,
+    height: height,
+    widthSegments: widthSegments,
+    heightSegments: heightSegments
+  };
+  
+  console.log(`✅ Geometría manual creada exitosamente`);
+  console.log(`   - Vértices: ${vertices.length / 3}`);
+  console.log(`   - Triángulos: ${indices.length / 3}`);
+  
+  return geometry;
+}
+
+  //agua
+  async _CreateWater() {
+    console.log("🌊 Creando agua...");
+    
+    // Cargar textura de normales para las olas
+    const waterNormals = await this._LoadTextureAsync(
+        new THREE.TextureLoader(),
+        'https://threejs.org/examples/textures/waternormals.jpg'
+    );
+    
+    if (waterNormals) {
+        waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+    }
+
+    // Geometría del agua 
+    const waterGeometry = new THREE.PlaneGeometry(300, 300);
+
+    // Crear objeto de agua
+    this._water = new Water(waterGeometry, {
+        color: '#1e90ff',
+        scale: 10,
+        flowDirection: new THREE.Vector2(1, 0.5),
+        textureWidth: 2048,
+        textureHeight: 2048,
+        normalMap0: waterNormals,
+        normalMap1: waterNormals,
+    });
+
+    // Posicionar el agua
+    this._water.rotation.x = -Math.PI / 2;
+    this._water.position.y = 5;
+
+    // Configurar transparencia
+    this._water.material.transparent = true;
+    this._water.material.uniforms.config.value.w = 0.6;
+    this._water.material.uniforms.color.value.setRGB(0.12, 0.56, 1.0);
+    this._water.material.blending = THREE.NormalBlending;
+    this._water.material.side = THREE.DoubleSide;
+
+    this._scene.add(this._water);
+    
+    // 🎯 COLISIÓN: Crear BoundingBox para detección
+    const waterThickness = 0.5; // Grosor de la zona de colisión
+    this._waterBoundingBox = new THREE.Box3(
+        new THREE.Vector3(-150, 5 - waterThickness, -150), // min
+        new THREE.Vector3(150, 5 + waterThickness, 150)    // max
+    );
+    
+    // Guardar altura del agua para efectos adicionales
+    this._waterLevel = 5;
+    
+    console.log("✅ Agua creada con colisión");
+}
+
+_InstantiateModel(path, position, scale, rotation = new THREE.Vector3(0, 0, 0), usePreciseCollision = false) {
     const instance = this._modelTemplates[path].clone();
     instance.position.copy(position);
     instance.scale.set(scale.x, scale.y, scale.z);
+    instance.rotation.set(rotation.x, rotation.y, rotation.z);
     
     this._scene.add(instance);
     this._decorativeModels.push(instance);
     
-    // Crear hitbox
-    const boxGeo = new THREE.BoxGeometry(hitboxSize.x, hitboxSize.y, hitboxSize.z);
-    const boxMat = new THREE.MeshBasicMaterial({ visible: false });
-    const hitbox = new THREE.Mesh(boxGeo, boxMat);
-    hitbox.position.copy(position);
-    this._scene.add(hitbox);
-    this._interactiveHitboxes.push(hitbox);
+    let hitbox;
     
-    console.log(`⚡ Instancia creada de: ${path}`);
+    if (usePreciseCollision) {
+        // ✅ Colisión precisa OPTIMIZADA con BVH
+        hitbox = this._CreatePreciseCollider(instance);
+        console.log('✅ Collider preciso con BVH creado');
+    } else {
+        // Colisión simple de caja
+        const box = new THREE.Box3().setFromObject(instance);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        
+        const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
+        const boxMat = new THREE.MeshBasicMaterial({ 
+            visible: false, 
+            wireframe: true, 
+            color: 0x00ff00 
+        });
+        hitbox = new THREE.Mesh(boxGeo, boxMat);
+        
+        const center = new THREE.Vector3();
+        box.getCenter(center);
+        hitbox.position.copy(center);
+        
+        this._scene.add(hitbox);
+    }
+    
+    this._interactiveHitboxes.push(hitbox);
+    return hitbox;
 }
 
 // Para modelos OPACOS (sin alpha)
-LoadSceneModels(path, position, scale, hitboxSize) {
-    // Inicializar caché si no existe
+LoadSceneModels(path, position, scale, rotation = new THREE.Vector3(0, 0, 0)) {
     if (!this._modelTemplates) this._modelTemplates = {};
     if (!this._loadingModels) this._loadingModels = {};
 
-    // Si ya está cargado, instanciar
     if (this._modelTemplates[path]) {
-        this._InstantiateModel(path, position, scale, hitboxSize);
+        this._InstantiateModel(path, position, scale, rotation); // ✅ Sin hitboxSize
         return;
     }
 
-    // Si ya se está cargando, agregar a cola de espera
     if (this._loadingModels[path]) {
-        this._loadingModels[path].push({ position, scale, hitboxSize });
+        this._loadingModels[path].push({ position, scale, rotation }); // ✅ Sin hitboxSize
         console.log(`⏳ Esperando carga de: ${path}`);
         return;
     }
 
-    // Marcar como "cargando" y crear cola
     this._loadingModels[path] = [];
 
     const loader = new FBXLoader();
@@ -1196,6 +2404,7 @@ LoadSceneModels(path, position, scale, hitboxSize) {
         (fbx) => {
             fbx.position.copy(position);
             fbx.scale.set(scale.x, scale.y, scale.z);
+            fbx.rotation.set(rotation.x, rotation.y, rotation.z);
 
             fbx.traverse((child) => {
                 if (child.isMesh) {
@@ -1211,24 +2420,33 @@ LoadSceneModels(path, position, scale, hitboxSize) {
 
             this._scene.add(fbx);
             this._decorativeModels.push(fbx);
-
-            // Guardar en caché PRIMERO
             this._modelTemplates[path] = fbx;
 
-            // Crear hitbox para el original
-            const boxGeo = new THREE.BoxGeometry(hitboxSize.x, hitboxSize.y, hitboxSize.z);
-            const boxMat = new THREE.MeshBasicMaterial({ visible: false });
+            // ✅ Crear hitbox automático para el original
+            const box = new THREE.Box3().setFromObject(fbx);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            
+            const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
+            const boxMat = new THREE.MeshBasicMaterial({ 
+              visible: false,      // ✅ Hacer visible
+              wireframe: false,    // ✅ Modo wireframe
+              color: 0x00ff00     // 🎨 Color verde (opcional)
+            });
             const hitbox = new THREE.Mesh(boxGeo, boxMat);
-            hitbox.position.copy(position);
+            
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            hitbox.position.copy(center);
+            
             this._scene.add(hitbox);
             this._interactiveHitboxes.push(hitbox);
 
             console.log(`✅ Modelo opaco cargado: ${path}`);
 
-            // Instanciar todos los que estaban esperando
             if (this._loadingModels[path]) {
                 this._loadingModels[path].forEach(params => {
-                    this._InstantiateModel(path, params.position, params.scale, params.hitboxSize);
+                    this._InstantiateModel(path, params.position, params.scale, params.rotation); // ✅ Sin hitboxSize
                 });
                 delete this._loadingModels[path];
             }
@@ -1244,25 +2462,21 @@ LoadSceneModels(path, position, scale, hitboxSize) {
 }
 
 // Para modelos CON TRANSPARENCIA (alpha)
-LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
-    // Inicializar caché si no existe
+LoadSceneModelsWithAlpha(path, position, scale, rotation = new THREE.Vector3(0, 0, 0)) {
     if (!this._modelTemplates) this._modelTemplates = {};
     if (!this._loadingModels) this._loadingModels = {};
 
-    // Si ya está cargado, instanciar
     if (this._modelTemplates[path]) {
-        this._InstantiateModel(path, position, scale, hitboxSize);
+        this._InstantiateModel(path, position, scale, rotation); // ✅ Sin hitboxSize
         return;
     }
 
-    // Si ya se está cargando, agregar a cola de espera
     if (this._loadingModels[path]) {
-        this._loadingModels[path].push({ position, scale, hitboxSize });
+        this._loadingModels[path].push({ position, scale, rotation }); // ✅ Sin hitboxSize
         console.log(`⏳ Esperando carga de: ${path}`);
         return;
     }
 
-    // Marcar como "cargando" y crear cola
     this._loadingModels[path] = [];
 
     const loader = new FBXLoader();
@@ -1271,6 +2485,7 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
         (fbx) => {
             fbx.position.copy(position);
             fbx.scale.set(scale.x, scale.y, scale.z);
+            fbx.rotation.set(rotation.x, rotation.y, rotation.z);
 
             fbx.traverse((child) => {
                 if (child.isMesh) {
@@ -1285,24 +2500,33 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
 
             this._scene.add(fbx);
             this._decorativeModels.push(fbx);
-
-            // Guardar en caché PRIMERO
             this._modelTemplates[path] = fbx;
 
-            // Crear hitbox para el original
-            const boxGeo = new THREE.BoxGeometry(hitboxSize.x, hitboxSize.y, hitboxSize.z);
-            const boxMat = new THREE.MeshBasicMaterial({ visible: false });
+            // ✅ Crear hitbox automático para el original
+            const box = new THREE.Box3().setFromObject(fbx);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            
+            const boxGeo = new THREE.BoxGeometry(size.x, size.y, size.z);
+            const boxMat = new THREE.MeshBasicMaterial({ 
+              visible: false,      // ✅ Hacer visible
+              wireframe: false,    // ✅ Modo wireframe
+              color: 0x00ff00     // 🎨 Color verde (opcional)
+            });
             const hitbox = new THREE.Mesh(boxGeo, boxMat);
-            hitbox.position.copy(position);
+            
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+            hitbox.position.copy(center);
+            
             this._scene.add(hitbox);
             this._interactiveHitboxes.push(hitbox);
 
             console.log(`✅ Modelo con alpha cargado: ${path}`);
 
-            // Instanciar todos los que estaban esperando
             if (this._loadingModels[path]) {
                 this._loadingModels[path].forEach(params => {
-                    this._InstantiateModel(path, params.position, params.scale, params.hitboxSize);
+                    this._InstantiateModel(path, params.position, params.scale, params.rotation); // ✅ Sin hitboxSize
                 });
                 delete this._loadingModels[path];
             }
@@ -1315,6 +2539,91 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
             delete this._loadingModels[path];
         }
     );
+}
+
+// ⭐ NUEVO: Para modelos con COLISIÓN PRECISA
+LoadSceneModelsWithPrecision(path, position, scale, rotation = new THREE.Vector3(0, 0, 0)) {
+    if (!this._modelTemplates) this._modelTemplates = {};
+    if (!this._loadingModels) this._loadingModels = {};
+
+    // Si ya está cargado, instanciar y retornar
+    if (this._modelTemplates[path]) {
+        return Promise.resolve(this._InstantiateModel(path, position, scale, rotation, true));
+    }
+
+    // Si ya se está cargando, agregar a la cola y retornar promesa
+    if (this._loadingModels[path]) {
+        return new Promise((resolve) => {
+            this._loadingModels[path].push({ 
+                position, 
+                scale, 
+                rotation, 
+                usePrecise: true,
+                resolve // ⭐ Guardar resolve para llamarlo después
+            });
+        });
+    }
+
+    // ⭐ Crear nueva promesa para la carga
+    return new Promise((resolve, reject) => {
+        this._loadingModels[path] = [];
+
+        const loader = new FBXLoader();
+        loader.load(
+            path,
+            (fbx) => {
+                fbx.position.copy(position);
+                fbx.scale.set(scale.x, scale.y, scale.z);
+                fbx.rotation.set(rotation.x, rotation.y, rotation.z);
+
+                fbx.traverse((child) => {
+                    if (child.isMesh) {
+                        child.material.transparent = false;
+                        child.material.opacity = 1.0;
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+
+                this._scene.add(fbx);
+                this._decorativeModels.push(fbx);
+                this._modelTemplates[path] = fbx;
+
+                // ✅ Crear collider preciso
+                const preciseCollider = this._CreatePreciseCollider(fbx);
+
+                console.log(`✅ Modelo con colisión precisa cargado: ${path}`);
+
+                // Resolver promesa principal
+                resolve(preciseCollider);
+
+                // Resolver promesas en cola
+                if (this._loadingModels[path]) {
+                    this._loadingModels[path].forEach(params => {
+                        const colliders = this._InstantiateModel(
+                            path, 
+                            params.position, 
+                            params.scale, 
+                            params.rotation, 
+                            params.usePrecise || false
+                        );
+                        if (params.resolve) {
+                            params.resolve(colliders);
+                        }
+                    });
+                    delete this._loadingModels[path];
+                }
+            },
+            (xhr) => {
+                console.log(`📦 Cargando ${path}: ${(xhr.loaded / xhr.total * 100).toFixed(1)}%`);
+            },
+            (error) => {
+                console.error(`❌ Error al cargar modelo: ${path}`, error);
+                reject(error);
+                delete this._loadingModels[path];
+            }
+        );
+    });
 }
 
   // ⭐ NUEVA FUNCIÓN: Cargar textura como promesa
@@ -1353,104 +2662,113 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
   }
 
   _ApplyHeightMap(heightTexture) {
-    if (!heightTexture || !heightTexture.image) {
-        console.warn("⚠️ Heightmap texture o image no disponible");
-        this._CreateFlatHeightMap();
-        return;
-    }
+  if (!heightTexture || !heightTexture.image) {
+    console.warn("⚠️ Heightmap texture no disponible");
+    this._CreateFlatHeightMap();
+    return;
+  }
 
-    if (!this._terrainGeometry || !this._terrainGeometry.attributes?.position) {
-        console.warn("⚠️ Geometría del terreno no disponible");
-        this._CreateFlatHeightMap();
-        return;
-    }
+  // Verificar atributos
+  if (!this._terrainGeometry.attributes || !this._terrainGeometry.attributes.position) {
+    console.error("❌ Geometría no tiene atributos position");
+    this._CreateFlatHeightMap();
+    return;
+  }
 
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = heightTexture.image.width;
-    canvas.height = heightTexture.image.height;
-    
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  
+  canvas.width = heightTexture.image.width;
+  canvas.height = heightTexture.image.height;
+  
+  console.log(`📊 Dimensiones heightmap: ${canvas.width}x${canvas.height}`);
+  
+  try {
     context.drawImage(heightTexture.image, 0, 0);
     const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
     
     const positions = this._terrainGeometry.attributes.position.array;
     const width = this._terrainGeometry.parameters.widthSegments + 1;
     const height = this._terrainGeometry.parameters.heightSegments + 1;
-
-    if (!positions) {
-        console.warn("⚠️ Array de posiciones no disponible");
-        this._CreateFlatHeightMap();
-        return;
-    }
     
-    // Crear array 2D para almacenar alturas
+    console.log(`📊 Grid del terreno: ${width}x${height} (${positions.length / 3} vértices)`);
+    
     this._terrainHeightData = [];
     const heightScale = 20;
+    
+    let minHeight = Infinity;
+    let maxHeight = -Infinity;
 
     for (let i = 0; i < height; i++) {
-        this._terrainHeightData[i] = [];
-        for (let j = 0; j < width; j++) {
-            const index = (i * width + j) * 3;
-            const pixelX = Math.floor((j / (width - 1)) * (canvas.width - 1));
-            const pixelY = Math.floor((i / (height - 1)) * (canvas.height - 1));
-            const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
-            const heightValue = imageData.data[pixelIndex] / 255.0;
-            
-            const calculatedHeight = heightValue * heightScale;
-            positions[index + 1] = calculatedHeight;
-            
-            this._terrainHeightData[i][j] = calculatedHeight;
-        }
+      this._terrainHeightData[i] = [];
+      for (let j = 0; j < width; j++) {
+        const index = (i * width + j) * 3;
+        
+        // Mapear coordenadas del grid a píxeles de la imagen
+        const pixelX = Math.floor((j / (width - 1)) * (canvas.width - 1));
+        const pixelY = Math.floor(((height - 1 - i) / (height - 1)) * (canvas.height - 1));
+        const pixelIndex = (pixelY * canvas.width + pixelX) * 4;
+        
+        // Leer valor de altura (escala de grises, canal rojo)
+        const heightValue = imageData.data[pixelIndex] / 255.0;
+        const calculatedHeight = heightValue * heightScale;
+        
+        // ⭐ CRÍTICO: Modificar eje Z porque el plano está rotado -90° en X
+        positions[index + 2] = calculatedHeight;
+        
+        this._terrainHeightData[i][j] = calculatedHeight;
+        
+        minHeight = Math.min(minHeight, calculatedHeight);
+        maxHeight = Math.max(maxHeight, calculatedHeight);
+      }
     }
     
+    // Marcar geometría como modificada
     this._terrainGeometry.attributes.position.needsUpdate = true;
     this._terrainGeometry.computeVertexNormals();
     
-    const minHeight = Math.min(...this._terrainHeightData.flat());
-    const maxHeight = Math.max(...this._terrainHeightData.flat());
-    console.log("✅ Heightmap aplicado:");
-    console.log(`   - Dimensiones grid: ${width}x${height}`);
+    console.log("✅ Heightmap aplicado correctamente");
     console.log(`   - Rango alturas: ${minHeight.toFixed(2)} a ${maxHeight.toFixed(2)}`);
-    console.log(`   - Base terreno Y: ${this._terrain.position.y}`);
+    console.log(`   - Escala: ${heightScale}x`);
     
-    // TEST: Verificar altura en centro (0,0)
-    const centerI = Math.floor(height / 2);
-    const centerJ = Math.floor(width / 2);
-    console.log(`   - Altura en centro del terreno: ${this._terrainHeightData[centerI][centerJ].toFixed(2)}`);
+  } catch (error) {
+    console.error("❌ Error al procesar heightmap:", error);
+    this._CreateFlatHeightMap();
   }
+}
 
   _GetTerrainHeightAt(x, z) {
-    if (!this._terrainHeightData) {
-        return this._terrain ? this._terrain.position.y : -2;
-    }
-
-    const size = 500;
-    const gridX = this._terrainHeightData[0].length;
-    const gridZ = this._terrainHeightData.length;
-
-    let nx = ((x + size/2) / size) * (gridX - 1);
-    let nz = ((z + size/2) / size) * (gridZ - 1);
-
-    nx = Math.max(0, Math.min(gridX - 1, nx));
-    nz = Math.max(0, Math.min(gridZ - 1, nz));
-
-    const ix = Math.floor(nx);
-    const iz = Math.floor(nz);
-    const fx = nx - ix;
-    const fz = nz - iz;
-
-    const h00 = this._terrainHeightData[iz][ix];
-    const h10 = this._terrainHeightData[iz][Math.min(ix + 1, gridX - 1)];
-    const h01 = this._terrainHeightData[Math.min(iz + 1, gridZ - 1)][ix];
-    const h11 = this._terrainHeightData[Math.min(iz + 1, gridZ - 1)][Math.min(ix + 1, gridX - 1)];
-
-    const height = h00 * (1 - fx) * (1 - fz) +
-                   h10 * fx * (1 - fz) +
-                   h01 * (1 - fx) * fz +
-                   h11 * fx * fz;
-
-    return this._terrain.position.y + height;
+  if (!this._terrainHeightData) {
+    return this._terrain ? this._terrain.position.y : -2;
   }
+
+  const size = 300; // ⭐ CORRECCIÓN: Tamaño real del terreno
+  const gridX = this._terrainHeightData[0].length;
+  const gridZ = this._terrainHeightData.length;
+
+  let nx = ((x + size/2) / size) * (gridX - 1);
+  let nz = ((z + size/2) / size) * (gridZ - 1);
+
+  nx = Math.max(0, Math.min(gridX - 1, nx));
+  nz = Math.max(0, Math.min(gridZ - 1, nz));
+
+  const ix = Math.floor(nx);
+  const iz = Math.floor(nz);
+  const fx = nx - ix;
+  const fz = nz - iz;
+
+  const h00 = this._terrainHeightData[iz][ix];
+  const h10 = this._terrainHeightData[iz][Math.min(ix + 1, gridX - 1)];
+  const h01 = this._terrainHeightData[Math.min(iz + 1, gridZ - 1)][ix];
+  const h11 = this._terrainHeightData[Math.min(iz + 1, gridZ - 1)][Math.min(ix + 1, gridX - 1)];
+
+  const height = h00 * (1 - fx) * (1 - fz) +
+                 h10 * fx * (1 - fz) +
+                 h01 * (1 - fx) * fz +
+                 h11 * fx * fz;
+
+  return this._terrain.position.y + height;
+}
 
   _UpdateCamera() {
     if (!this._controls || !this._controls._target) {
@@ -1476,7 +2794,14 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
       terrain: this._terrain,
       terrainManager: this._terrainManager,  // ⭐ AÑADIDO
       skyDome: this._skyDome,
-      collisionBoxes: this._collisionBoxes //añadido para colis
+      world: this, //para usar loadmodelswithprecition fuera de game no se q xd
+
+      //colisiones
+      collisionBoxes: this._collisionBoxes, //añadido para colis
+      leveloneHitboxes: this._leveloneHitboxes,
+      _platformsHitboxes: this._platformsHitboxes,
+      _qboxHitboxes: this._qboxHitboxes,
+      _checkpointHitboxes: this._checkpointHitboxes,
     }
     this._controls = new BasicCharacterController(params);
   }
@@ -1526,9 +2851,78 @@ LoadSceneModelsWithAlpha(path, position, scale, hitboxSize) {
     if (this._skyDome && this._camera) {
       this._skyDome.position.copy(this._camera.position);
     }
-
+   
     this._UpdateCamera();
   }
+
+  //optimizacion de colis
+_CreatePreciseCollider(modelInstance) {
+    const colliders = [];
+    modelInstance.updateMatrixWorld(true);
+    
+    modelInstance.traverse((child) => {
+        if (child.isMesh) {
+            // ✅ Generar BVH si está disponible
+            if (typeof child.geometry.computeBoundsTree === 'function') {
+                if (!child.geometry.boundsTree) {
+                    child.geometry.computeBoundsTree();
+                    console.log('🚀 BVH generado para mesh');
+                }
+            }
+            
+            // ⭐ Clonar la geometría exacta del modelo
+            const colliderGeo = child.geometry.clone();
+            
+            // ⭐ CRÍTICO: Aplicar las transformaciones del mundo a la geometría
+            colliderGeo.applyMatrix4(child.matrixWorld);
+            
+            // Regenerar BVH después de transformar
+            if (typeof colliderGeo.computeBoundsTree === 'function') {
+                colliderGeo.computeBoundsTree();
+                // console.log('🚀 BVH regenerado después de transformación');
+            }
+            
+            // Material para visualizar (cambiar visible a true para debug)
+            const colliderMat = new THREE.MeshBasicMaterial({ 
+                visible: false,  //VER LAS COLISIONES (true)
+                wireframe: true, 
+                color: 0xff0000,
+                transparent: true,
+                opacity: 0.3
+            });
+            
+            const collider = new THREE.Mesh(colliderGeo, colliderMat);
+            
+            // ⭐ El collider está en posición (0,0,0) porque ya aplicamos las transformaciones
+            collider.position.set(0, 0, 0);
+            collider.rotation.set(0, 0, 0);
+            collider.scale.set(1, 1, 1);
+            
+            // ⭐ Importante: Deshabilitar frustum culling para que raycast siempre funcione
+            collider.frustumCulled = false;
+            
+            this._scene.add(collider);
+            colliders.push(collider);
+            
+            // console.log(`🔴 Collider preciso creado con ${colliderGeo.attributes.position.count} vértices`);
+        }
+    });
+    
+    return colliders.length > 0 ? colliders : null;
+}
+
+// Con BVH, estas operaciones son 100x más rápidas
+checkCollisionWithTentacle(playerPosition) {
+    const raycaster = new THREE.Raycaster();
+    const direction = new THREE.Vector3(0, -1, 0); // Hacia abajo
+    
+    raycaster.set(playerPosition, direction);
+    
+    // Esto usa el BVH automáticamente - SUPER RÁPIDO ⚡
+    const intersects = raycaster.intersectObjects(this.tentacleColliders, true);
+    
+    return intersects.length > 0;
+}
 }
 
 let _APP = null;
