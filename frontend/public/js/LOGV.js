@@ -77,7 +77,7 @@ class LoginSystem {
 		});
 	}
 
-	async handleLoginSubmit() {
+	handleLoginSubmit() {
 		const email = document.querySelector('.form.login input[type="text"]').value;
 		const password = document.querySelector('.form.login input[type="password"]').value;
 
@@ -94,61 +94,25 @@ class LoginSystem {
 			return;
 		}
 
+		// Simular login (reemplazar con tu API real)
 		this.showMessage('Iniciando sesión...', 'info');
 
-		try {
-			// Llamar a la API para login
-			const response = await fetch('http://localhost:3000/api/auth/login', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					email: email,
-					password: password
-				})
-			});
+		setTimeout(() => {
+			// Guardar datos en localStorage
+			localStorage.setItem('userEmail', email);
+			localStorage.setItem('isLoggedIn', 'true');
+			localStorage.setItem('authProvider', 'email');
 
-			const data = await response.json();
+			this.showMessage('¡Login exitoso! Redirigiendo...', 'success');
 
-			if (!response.ok) {
-				throw new Error(data.message || 'Error en el login');
-			}
-
-			if (data.success) {
-				// Guardar datos en localStorage
-				localStorage.setItem('userEmail', email);
-				localStorage.setItem('userName', data.user.nickname);
-				localStorage.setItem('userId', data.user.id);
-				localStorage.setItem('isLoggedIn', 'true');
-				localStorage.setItem('authProvider', 'email');
-				localStorage.setItem('isAuthenticated', 'true');
-				localStorage.setItem('PlayerNickname', data.user.nickname);
-
-				// Guardar estadísticas si vienen en la respuesta
-				if (data.user.best_score !== undefined) {
-					localStorage.setItem('best_score', data.user.best_score);
-				}
-				if (data.user.play_time !== undefined) {
-					localStorage.setItem('play_time', data.user.play_time);
-				}
-
-				this.showMessage('¡Login exitoso! Redirigiendo...', 'success');
-
-				// Redirigir al menú
-				setTimeout(() => {
-					window.location.href = 'index.html';
-				}, 1500);
-			} else {
-				throw new Error(data.message || 'Error en el login');
-			}
-
-		} catch (error) {
-			console.error('❌ Error en login:', error);
-			this.showMessage(error.message || 'Error al iniciar sesión', 'error');
-		}
+			// Redirigir al menú
+			setTimeout(() => {
+				window.location.href = 'MENU.html';
+			}, 1500);
+		}, 1000);
 	}
-	async handleRegisterSubmit() {
+
+	handleRegisterSubmit() {
 		const email = document.querySelector('.form.register input[type="text"]').value;
 		const username = document.querySelector('.form.register .frs-up input[type="text"]').value;
 		const password = document.querySelector('.form.register .frs-up input[type="password"]').value;
@@ -173,51 +137,22 @@ class LoginSystem {
 
 		this.showMessage('Creando cuenta...', 'info');
 
-		try {
-			// Llamar a la API para registrar el usuario
-			const response = await fetch('http://localhost:3000/api/auth/register', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify({
-					email: email,
-					nickname: username,
-					password: password
-				})
-			});
+		setTimeout(() => {
+			// Guardar datos
+			localStorage.setItem('userEmail', email);
+			localStorage.setItem('userName', username);
+			localStorage.setItem('isLoggedIn', 'true');
+			localStorage.setItem('authProvider', 'email');
 
-			const data = await response.json();
+			this.showMessage('¡Cuenta creada exitosamente!', 'success');
 
-			if (!response.ok) {
-				throw new Error(data.message || 'Error en el registro');
-			}
-
-			if (data.success) {
-				// Guardar datos en localStorage
-				localStorage.setItem('userEmail', email);
-				localStorage.setItem('userName', username);
-				localStorage.setItem('userId', data.user.id);
-				localStorage.setItem('isLoggedIn', 'true');
-				localStorage.setItem('authProvider', 'email');
-				localStorage.setItem('isAuthenticated', 'true');
-				localStorage.setItem('PlayerNickname', username);
-
-				this.showMessage('¡Cuenta creada exitosamente!', 'success');
-
-				// Redirigir al menú principal
-				setTimeout(() => {
-					window.location.href = 'index.html';
-				}, 1500);
-			} else {
-				throw new Error(data.message || 'Error en el registro');
-			}
-
-		} catch (error) {
-			console.error('❌ Error en registro:', error);
-			this.showMessage(error.message || 'Error al crear la cuenta', 'error');
-		}
+			// Redirigir
+			setTimeout(() => {
+				window.location.href = 'MENU.html';
+			}, 1500);
+		}, 1000);
 	}
+
 	validateEmail(email) {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return emailRegex.test(email);
@@ -343,43 +278,31 @@ class GoogleAuth {
 		}
 	}
 
-	// Reemplazar solo el método handleSuccessfulLogin en la clase GoogleAuth
-
 	handleSuccessfulLogin(email, userId, name) {
 		console.log('✅ Login exitoso con Google:', { email, userId, name });
-
-		// Obtener el avatar si viene en la URL
-		const urlParams = new URLSearchParams(window.location.search);
-		const avatar = urlParams.get('avatar');
 
 		// Guardar en localStorage
 		localStorage.setItem('userEmail', email);
 		localStorage.setItem('userId', userId || 'google_user');
 		localStorage.setItem('userName', name || email);
-		localStorage.setItem('PlayerNickname', name || email.split('@')[0]); // Para el juego
-		localStorage.setItem('userAvatar', avatar || '');
 		localStorage.setItem('authProvider', 'google');
 		localStorage.setItem('isLoggedIn', 'true');
-		localStorage.setItem('isAuthenticated', 'true');
-
-		// Actualizar imagen de perfil si existe
-		if (avatar) {
-			const avatarElements = document.querySelectorAll('#avatar, #avatarr');
-			avatarElements.forEach(el => {
-				if (el) el.src = avatar;
-			});
-		}
 
 		// Mostrar mensaje de éxito
 		this.showMessage(`¡Bienvenido ${name || email}!`, 'success');
 
-		// Limpiar URL antes de redirigir
-		window.history.replaceState({}, document.title, window.location.pathname);
-
 		// Redirigir al menú principal
 		setTimeout(() => {
-			window.location.href = 'index.html';
+			window.location.href = 'MENU.html';
 		}, 1500);
+	}
+
+	handleLoginError(error) {
+		console.error('❌ Error en login con Google:', error);
+		this.showMessage(`Error: ${error}`, 'error');
+
+		// Limpiar URL
+		window.history.replaceState({}, document.title, window.location.pathname);
 	}
 
 	showMessage(message, type = 'info') {
