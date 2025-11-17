@@ -8,7 +8,7 @@ export class _Scene{
     }
     init(){
         //Variables
-        this.pauseMenu = document.getElementById("config-pause"); 
+        this.pauseMenu = document.getElementById("pauseMenu"); 
         this.settingsImg = document.querySelector(".gmc-set-h img");
         this.resumeBtn = document.getElementById("resume-gmc");
         this.gameMode = document.getElementById("gamemode-gmc");

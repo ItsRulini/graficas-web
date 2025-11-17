@@ -3,7 +3,7 @@ export class MultiplayerManager {
         this.socket = null;
         this.playerNickname = '';
         this.playerCharacter = '';
-        this.otherPlayers = {};
+        this.otherPlayers = {}; // { nickname: { character, position } }
         this.isConnected = false;
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
@@ -13,7 +13,6 @@ export class MultiplayerManager {
     }
 
     _GetPlayerInfo() {
-        // Obtener nickname y personaje
         this.playerNickname = localStorage.getItem('PlayerNickname');
         this.playerCharacter = localStorage.getItem('PlayerName');
         
@@ -29,20 +28,18 @@ export class MultiplayerManager {
     }
 
     _Connect() {
-        // Verificar que Socket.IO esté disponible
         if (typeof io === 'undefined') {
-            console.error('❌ Socket.IO not loaded! Make sure to include the CDN script.');
+            console.error('❌ Socket.IO not loaded!');
             alert('Error: Socket.IO no está cargado. Verifica tu conexión.');
             return;
         }
 
-        // Obtener URL del servidor desde variable global
-        const serverUrl = window.SERVER_URL || 'http://localhost:3000';
+        let serverUrl = window.SERVER_URL || 'http://localhost:3000';
+        serverUrl = 'https://ssmz3744-3000.usw3.devtunnels.ms/';
         console.log(`🔌 Connecting to: ${serverUrl}`);
 
-        // Configuración de conexión con opciones mejoradas
         this.socket = io(serverUrl, {
-            transports: ['websocket', 'polling'], // Intentar WebSocket primero, luego polling
+            transports: ['websocket', 'polling'],
             reconnection: true,
             reconnectionDelay: 1000,
             reconnectionDelayMax: 5000,
@@ -50,7 +47,8 @@ export class MultiplayerManager {
             timeout: 10000
         });
 
-        // Evento: Conexión exitosa
+        // ==================== EVENTOS DE CONEXIÓN ====================
+        
         this.socket.on('connect', () => {
             console.log('✅ Connected to server');
             console.log('🆔 Socket ID:', this.socket.id);
@@ -64,7 +62,6 @@ export class MultiplayerManager {
             });
         });
 
-        // Evento: Error de conexión
         this.socket.on('connect_error', (error) => {
             console.error('❌ Connection error:', error.message);
             this.reconnectAttempts++;
@@ -75,60 +72,103 @@ export class MultiplayerManager {
             }
         });
 
-        // Evento: Desconexión
         this.socket.on('disconnect', (reason) => {
             console.log('⚠️ Disconnected from server. Reason:', reason);
             this.isConnected = false;
             
             if (reason === 'io server disconnect') {
-                // El servidor cerró la conexión, intentar reconectar manualmente
                 console.log('🔄 Attempting manual reconnection...');
                 this.socket.connect();
             }
         });
 
-        // Evento: Reconexión
         this.socket.on('reconnect', (attemptNumber) => {
             console.log(`🔄 Reconnected after ${attemptNumber} attempts`);
         });
 
-        // Evento: Nuevo jugador se une
-        this.socket.on('Iniciar', (data) => {
-            console.log(`🎮 Player data received:`, data);
+        // ==================== ⭐ EVENTO PRINCIPAL: PLAYERLIST ====================
+        
+        this.socket.on('PlayerList', (playerList) => {
+            console.log('📋 Received player list:', playerList);
+            console.log(`   - Total players in server: ${playerList.length}`);
             
-            // No procesar nuestros propios datos
-            if (data.nickname === this.playerNickname) {
-                console.log('ℹ️ Ignoring own player data');
-                return;
-            }
-
-            // Crear jugador si no existe
-            if (!this.otherPlayers[data.nickname]) {
-                console.log(`➕ Creating new player: ${data.nickname}`);
-                if (this.onCreatePlayer) {
-                    this.onCreatePlayer(data.nickname, data.character);
+            // 1. Crear Set con nicknames actuales del servidor
+            const serverNicknames = new Set(
+                playerList
+                    .filter(p => p.nickname !== this.playerNickname)
+                    .map(p => p.nickname)
+            );
+            
+            console.log('   - Other players:', Array.from(serverNicknames));
+            
+            // 2. Remover jugadores que ya NO están en el servidor
+            Object.keys(this.otherPlayers).forEach(nickname => {
+                if (!serverNicknames.has(nickname)) {
+                    console.log(`🗑️ Removing disconnected player: ${nickname}`);
+                    if (this.onRemovePlayer) {
+                        this.onRemovePlayer(nickname);
+                    }
+                    delete this.otherPlayers[nickname];
                 }
-            }
+            });
+            
+            // 3. Crear/actualizar jugadores del servidor
+            playerList.forEach(player => {
+                // Ignorar nuestro propio jugador
+                if (player.nickname === this.playerNickname) {
+                    return;
+                }
+                
+                // Si el jugador NO existe, créalo
+                if (!this.otherPlayers[player.nickname]) {
+                    console.log(`➕ Creating new player: ${player.nickname} (${player.character})`);
+                    
+                    // Guardar datos del jugador
+                    this.otherPlayers[player.nickname] = {
+                        character: player.character,
+                        position: player.position || { x: 0, y: 0, z: 0 }
+                    };
+                    
+                    // ⭐ Llamar callback para crear mesh
+                    if (this.onCreatePlayer) {
+                        console.log(`   - Calling onCreatePlayer callback for ${player.nickname}`);
+                        this.onCreatePlayer(player.nickname, player.character);
+                    } else {
+                        console.warn(`   - ⚠️ onCreatePlayer callback not set!`);
+                    }
+                }
+                // Si ya existe, actualizar posición
+                else if (player.position) {
+                    this.otherPlayers[player.nickname].position = player.position;
+                    
+                    if (this.onUpdatePlayer) {
+                        this.onUpdatePlayer(player.nickname, player.position);
+                    }
+                }
+            });
+            
+            console.log(`👥 Total other players tracked: ${Object.keys(this.otherPlayers).length}`);
         });
 
-        // Evento: Actualización de posición de otros jugadores
+        // ==================== EVENTO POSICION (ACTUALIZACIÓN EN TIEMPO REAL) ====================
+        
         this.socket.on('Posicion', (posicionData, nickname) => {
             // No procesar nuestra propia posición
             if (nickname === this.playerNickname) {
                 return;
             }
 
-            if (this.onUpdatePlayer) {
-                this.onUpdatePlayer(nickname, posicionData);
-            }
-        });
-
-        // Evento: Jugador se desconectó
-        this.socket.on('PlayerDisconnected', (nickname) => {
-            console.log(`👋 Player disconnected: ${nickname}`);
-            
-            if (this.onRemovePlayer) {
-                this.onRemovePlayer(nickname);
+            // Actualizar posición del jugador si existe
+            if (this.otherPlayers[nickname]) {
+                this.otherPlayers[nickname].position = posicionData;
+                
+                if (this.onUpdatePlayer) {
+                    this.onUpdatePlayer(nickname, posicionData);
+                }
+            } else {
+                // Si recibimos una posición de un jugador que no conocemos,
+                // es probable que se haya perdido el evento PlayerList
+                console.warn(`⚠️ Received position for unknown player: ${nickname}`);
             }
         });
     }
