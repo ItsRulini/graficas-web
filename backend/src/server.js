@@ -535,72 +535,96 @@ app.get('/', (req, res) => {
 
 // ==================== SOCKET.IO - MULTIPLAYER ====================
 
+// ==================== SOCKET.IO - MULTIPLAYER (CORREGIDO) ====================
+
 // Lista de jugadores (EXISTENTE)
 const listaJugadores = [];
 
 // Escuchar conexiones (EXISTENTE)
 io.on('connection', (socket) => {
-	console.log('👤 User connected:', socket.id);
+    console.log('👤 User connected:', socket.id);
 
-	// Evento: Jugador se une (EXISTENTE)
-	socket.on('Iniciar', (data) => {
-		console.log('🎮 Player joined:', data);
+    // Evento: Jugador se une (🔧 MODIFICADO)
+    socket.on('Iniciar', (data) => {
+        console.log('🎮 Player joined:', data);
 
-		const existe = listaJugadores.find(p => p.nickname === data.nickname);
-		if (!existe) {
-			listaJugadores.push({
-				nickname: data.nickname,
-				character: data.character,
-				socketId: socket.id,
-				x: 0,
-				y: 0,
-				z: 0
-			});
+        // Verificar si ya existe
+        const existe = listaJugadores.find(p => p.nickname === data.nickname);
+        if (existe) {
+            console.log('⚠️ Player already exists:', data.nickname);
+            return;
+        }
 
-			console.log(`📊 Total players: ${listaJugadores.length}`);
-		}
+        // ⭐ CRÍTICO: Enviar lista de jugadores EXISTENTES al nuevo jugador PRIMERO
+        const existingPlayers = listaJugadores.map(p => ({
+            nickname: p.nickname,
+            character: p.character,
+            position: { x: p.x, y: p.y, z: p.z }
+        }));
 
-		// Notificar a todos los clientes
-		io.emit('Iniciar', data);
+        if (existingPlayers.length > 0) {
+            console.log(`📤 Sending ${existingPlayers.length} existing players to ${data.nickname}`);
+            socket.emit('PlayerList', existingPlayers);
+        }
 
-		// Enviar lista de jugadores existentes al nuevo jugador
-		listaJugadores.forEach(player => {
-			socket.emit('Iniciar', {
-				nickname: player.nickname,
-				character: player.character
-			});
-		});
-	});
+        // Agregar nuevo jugador DESPUÉS de enviar la lista
+        listaJugadores.push({
+            nickname: data.nickname,
+            character: data.character,
+            socketId: socket.id,
+            x: -105,
+            y: 0,
+            z: -115
+        });
 
-	// Evento: Actualización de posición (EXISTENTE)
-	socket.on('Posicion', (posicion, nickname) => {
-		const player = listaJugadores.find(p => p.nickname === nickname);
-		if (player) {
-			player.x = posicion.x;
-			player.y = posicion.y;
-			player.z = posicion.z;
+        console.log(`📊 Total players: ${listaJugadores.length}`);
+        console.log('👥 Current players:', listaJugadores.map(p => p.nickname));
 
-			// Broadcast a todos excepto al emisor
-			socket.broadcast.emit('Posicion', posicion, nickname);
-		}
-	});
+        // ⭐ Notificar a TODOS (incluyendo el nuevo) sobre el nuevo jugador
+        io.emit('PlayerList', listaJugadores.map(p => ({
+            nickname: p.nickname,
+            character: p.character,
+            position: { x: p.x, y: p.y, z: p.z }
+        })));
 
-	// Evento: Desconexión (EXISTENTE)
-	socket.on('disconnect', () => {
-		console.log('👋 User disconnected:', socket.id);
-		const index = listaJugadores.findIndex(p => p.socketId === socket.id);
+        console.log(`📤 Broadcasted new player ${data.nickname} to all clients`);
+    });
 
-		if (index !== -1) {
-			const disconnectedPlayer = listaJugadores[index];
-			console.log('🗑️ Removing player:', disconnectedPlayer.nickname);
+    // Evento: Actualización de posición (EXISTENTE)
+    socket.on('Posicion', (posicion, nickname) => {
+        const player = listaJugadores.find(p => p.nickname === nickname);
+        if (player) {
+            player.x = posicion.x;
+            player.y = posicion.y;
+            player.z = posicion.z;
 
-			// Notificar a otros jugadores sobre la desconexión
-			io.emit('PlayerDisconnected', disconnectedPlayer.nickname);
+            // Broadcast a todos excepto al emisor
+            socket.broadcast.emit('Posicion', posicion, nickname);
+        }
+    });
 
-			listaJugadores.splice(index, 1);
-			console.log(`📊 Total players: ${listaJugadores.length}`);
-		}
-	});
+    // Evento: Desconexión (🔧 MODIFICADO)
+    socket.on('disconnect', () => {
+        console.log('👋 User disconnected:', socket.id);
+        const index = listaJugadores.findIndex(p => p.socketId === socket.id);
+
+        if (index !== -1) {
+            const disconnectedPlayer = listaJugadores[index];
+            console.log('🗑️ Removing player:', disconnectedPlayer.nickname);
+
+            // Remover jugador
+            listaJugadores.splice(index, 1);
+
+            // ⭐ NUEVO: Enviar lista actualizada a TODOS
+            io.emit('PlayerList', listaJugadores.map(p => ({
+                nickname: p.nickname,
+                character: p.character,
+                position: { x: p.x, y: p.y, z: p.z }
+            })));
+
+            console.log(`📊 Total players: ${listaJugadores.length}`);
+        }
+    });
 });
 
 // ==================== ERROR HANDLERS ====================

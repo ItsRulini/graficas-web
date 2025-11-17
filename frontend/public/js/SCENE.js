@@ -7,8 +7,6 @@ import { MultiplayerManager } from './multiplayer.js'; //AGREGADO PARA MULTI
 import { Water } from 'https://cdn.jsdelivr.net/npm/three@0.118/examples/jsm/objects/Water2.js'; //agua
 // import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh'; //colisiones segun el modelo
 
-console.log("hola");
-
 ////    MODELOS de PERSONAJES    ////
 const characters = {
     yoshi: {
@@ -1531,17 +1529,70 @@ class JumpState extends State {
 
 class CharacterControllerDemo {
   constructor() {
-    //                      AGREGADO PARA MULTI
-    // this._Initialize();
-    // Inicializar multiplayer PRIMERO
-    this._multiplayerManager = new MultiplayerManager();
+    // AGREGAR estas líneas
+    this._pendingPlayers = [];
+    this._isSceneReady = false;
     this._otherPlayersMeshes = {};
+
+    // Creamos el manager de multiplayer
+    this._multiplayerManager = new MultiplayerManager();
     
+    // CRÍTICO: Configurar callbacks INMEDIATAMENTE
+    this._SetupMultiplayerCallbacks();
+
     // Esperar conexión
     this._WaitForConnection();
-
-    
   }
+
+  _SetupMultiplayerCallbacks() {
+    console.log("🔧 Configuring multiplayer callbacks EARLY...");
+    
+    this._multiplayerManager.onCreatePlayer = (nickname, characterKey) => {
+      console.log(`📞 onCreatePlayer callback: ${nickname} (${characterKey})`);
+      
+      if (!this._isSceneReady || !this._scene) {
+        console.log(`⏸️ Scene not ready, queuing: ${nickname}`);
+        this._pendingPlayers.push({ nickname, character: characterKey });
+        return;
+      }
+      
+      this._CreateOtherPlayerMesh(nickname, characterKey);
+    };
+
+    this._multiplayerManager.onUpdatePlayer = (nickname, posicion) => {
+      if (this._otherPlayersMeshes[nickname]) {
+        this._otherPlayersMeshes[nickname].position.set(
+          posicion.x,
+          posicion.y,
+          posicion.z
+        );
+      }
+    };
+
+    this._multiplayerManager.onRemovePlayer = (nickname) => {
+      console.log(`🗑️ Removing player: ${nickname}`);
+      
+      const mesh = this._otherPlayersMeshes[nickname];
+      if (mesh) {
+        this._scene.remove(mesh);
+        mesh.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(mat => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        });
+        delete this._otherPlayersMeshes[nickname];
+        console.log(`✅ Player ${nickname} removed`);
+      }
+    };
+    
+    console.log("✅ Multiplayer callbacks configured EARLY");
+  }
+
   //                      AGREGADO PARA MULTI
   async _WaitForConnection() {
     console.log("⏳ Waiting for multiplayer connection...");
@@ -1997,34 +2048,94 @@ class CharacterControllerDemo {
 
     // console.log(`✅ ${this._leveloneHitboxes.length} hitboxes cargados y listos`);
     console.log("🎮 Paso 2: Cargando personaje...");
-    this._LoadAnimatedModel();
+    await this._LoadAnimatedModel();
 
-    this._SetupMultiplayer(); //AGREGADO PARA MULTI
+    //this._SetupMultiplayer(); //AGREGADO PARA MULTI
+    // ⭐ AGREGAR estas líneas ANTES de this._RAF()
+    this._isSceneReady = true;
+    this._ProcessPendingPlayers();
+    this._previousRAF = null;
     this._RAF();
   }
-  //              AGREGADO PARA MULTI
-  _SetupMultiplayer() {
-    // Callback para crear otros jugadores con modelo FBX
-    this._multiplayerManager.onCreatePlayer = (nickname, characterKey) => {
-      this._CreateOtherPlayerMesh(nickname, characterKey);
-    };
 
-    // Callback para actualizar posición
-    this._multiplayerManager.onUpdatePlayer = (nickname, posicion) => {
-      if (this._otherPlayersMeshes[nickname]) {
-        this._otherPlayersMeshes[nickname].position.set(
-          posicion.x,
-          posicion.y,
-          posicion.z
-        );
-      }
-    };
-
-    console.log("🎮 Multiplayer setup complete");
+  _ProcessPendingPlayers() {
+    if (this._pendingPlayers.length === 0) {
+      console.log("📭 No hay jugadores pendientes");
+      return;
+    }
+    
+    console.log(`📥 Procesando ${this._pendingPlayers.length} jugadores pendientes`);
+    
+    this._pendingPlayers.forEach(({ nickname, character }) => {
+      console.log(`🔄 Creando jugador pendiente: ${nickname} (${character})`);
+      this._CreateOtherPlayerMesh(nickname, character);
+    });
+    
+    this._pendingPlayers = [];
   }
+
+  // //              AGREGADO PARA MULTI
+  // _SetupMultiplayer() {
+  //   this._multiplayerManager.onCreatePlayer = (nickname, characterKey) => {
+  //     // ⭐ VERIFICAR si la escena está lista
+  //     if (!this._isSceneReady || !this._scene) {
+  //       console.log(`⏸️ Escena no lista, guardando en cola: ${nickname}`);
+  //       this._pendingPlayers.push({ nickname, character: characterKey });
+  //       return;
+  //     }
+      
+  //     this._CreateOtherPlayerMesh(nickname, characterKey);
+  //   };
+
+  //   this._multiplayerManager.onUpdatePlayer = (nickname, posicion) => {
+  //     if (this._otherPlayersMeshes[nickname]) {
+  //       this._otherPlayersMeshes[nickname].position.set(
+  //         posicion.x,
+  //         posicion.y,
+  //         posicion.z
+  //       );
+  //     }
+  //   };
+
+  //   // ⭐ AGREGAR callback para remover
+  //   this._multiplayerManager.onRemovePlayer = (nickname) => {
+  //     console.log(`🗑️ Removing player mesh: ${nickname}`);
+      
+  //     const mesh = this._otherPlayersMeshes[nickname];
+  //     if (mesh) {
+  //       this._scene.remove(mesh);
+  //       mesh.traverse((child) => {
+  //         if (child.geometry) child.geometry.dispose();
+  //         if (child.material) {
+  //           if (Array.isArray(child.material)) {
+  //             child.material.forEach(mat => mat.dispose());
+  //           } else {
+  //             child.material.dispose();
+  //           }
+  //         }
+  //       });
+  //       delete this._otherPlayersMeshes[nickname];
+  //       console.log(`✅ Player ${nickname} removed`);
+  //     }
+  //   };
+
+  //   console.log("🎮 Multiplayer setup complete");
+  // }
+
   //              AGREGADO PARA MULTI
   async _CreateOtherPlayerMesh(nickname, characterKey) {
     console.log(`🎨 Creating FBX model for player: ${nickname} (${characterKey})`);
+
+    // ⭐ VERIFICACIÓN CRÍTICA
+    if (!this._scene) {
+        console.error(`❌ Scene not ready! Cannot create player ${nickname}`);
+        return;
+    }
+    
+    if (this._otherPlayersMeshes[nickname]) {
+        console.log(`⚠️ Player ${nickname} already exists, skipping`);
+        return;
+    }
     
     if (!characters[characterKey]) {
         console.warn(`⚠️ Character ${characterKey} not found`);
@@ -2060,11 +2171,16 @@ class CharacterControllerDemo {
             }
         });
 
-        fbx.position.set(0, 0, 0);
+        // ⭐ CORRECCIÓN: Establecer posición inicial antes de añadir a la escena
+        fbx.position.set(-105, 0, -115); // Posición de spawn inicial
+        
+        // ⭐ CORRECCIÓN: Añadir a la escena y guardar referencia
         this._scene.add(fbx);
         this._otherPlayersMeshes[nickname] = fbx;
 
         console.log(`✅ Player ${nickname} (${characterKey}) loaded successfully`);
+        console.log(`📊 Total other players: ${Object.keys(this._otherPlayersMeshes).length}`);
+        
     } catch (error) {
         console.error(`❌ Error loading character for ${nickname}:`, error);
     }

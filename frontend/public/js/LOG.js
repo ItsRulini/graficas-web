@@ -8,6 +8,10 @@ class LoginSystem {
 	init() {
 		console.log("🚀 Inicializando sistema de login...");
 
+		// Servidor backend
+		//this.backendUrl = 'http://localhost:3000/';
+		this.backendUrl = 'https://ssmz3744-3000.usw3.devtunnels.ms/';
+
 		// Inicializar Google Auth
 		this.googleAuth = new GoogleAuth();
 
@@ -98,7 +102,7 @@ class LoginSystem {
 
 		try {
 			// Llamar a la API para login
-			const response = await fetch('http://localhost:3000/api/auth/login', {
+			const response = await fetch(`${this.backendUrl}api/auth/login`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
@@ -175,7 +179,7 @@ class LoginSystem {
 
 		try {
 			// Llamar a la API para registrar el usuario
-			const response = await fetch('http://localhost:3000/api/auth/register', {
+			const response = await fetch(`${this.backendUrl}api/auth/register`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json',
