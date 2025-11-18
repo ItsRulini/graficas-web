@@ -170,7 +170,7 @@ class BasicCharacterController {
 
     this._isJumping = false;
     this._jumpVelocity = 0;
-    this._gravity = -50;
+    this._gravity = -15;
 
     // ---        Variables del jugador       ---
     this._elapsedTime = 0; //conteo, tiempo q lleva jugando
@@ -272,7 +272,8 @@ class BasicCharacterController {
     await this._WaitForTerrainReady();
     
     const startHeight = this._GetTerrainHeightAt(0, 0);
-    this._target.position.set(-105, startHeight + 0.5, -115); //      ! POSICIÓN DEL JUGADOR
+    //-95,y,105
+    this._target.position.set(-0, startHeight + 0.5, 0); //      ! POSICIÓN DEL JUGADOR
     console.log(`✅ Personaje colocado en Y = ${this._target.position.y.toFixed(2)}`);
 
     // 2. Crear mixer y cargar animaciones
@@ -790,7 +791,7 @@ Update(timeInSeconds) {
         //    4. COLISIÓN CON EL AGUA
         if (this._IsObjectInWater(this._playerBox)) {
             // console.log("Aguas XD");
-            this._target.position.set(-105, startHeight + 0.5, -115);
+            this._target.position.set(-0, startHeight + 0.5, 0);
 
             this._totaldeaths +=1;
             if(this._totalScore >= 10){
@@ -934,7 +935,6 @@ SpawnItem(position) {
     );
   }
 }
-
 
 //    CREACION DE PARTICULAS (aca bien aca)
 _CreateParticles(position, count = 20, color = null) {
@@ -1681,7 +1681,7 @@ class CharacterControllerDemo {
 
     //skydome
     const textureLoader = new THREE.TextureLoader();
-    const skyTexture = textureLoader.load('./resources/textures/skydome.jpg');
+    const skyTexture = textureLoader.load('./resources/textures/skydomenoche.jpg');
 
     const skyGeo = new THREE.SphereGeometry(500, 60, 40);
     const skyMat = new THREE.MeshBasicMaterial({
@@ -1693,23 +1693,36 @@ class CharacterControllerDemo {
     this._scene.add(skyDome);
     this._skyDome = skyDome;
 
-    let light = new THREE.DirectionalLight(0xFFFFFF, 1.0);
-    light.position.set(-100, 100, 100);
-    light.target.position.set(0, 0, 0);
-    light.castShadow = true;
-    light.shadow.bias = -0.001;
-    light.shadow.mapSize.width = 4096;
-    light.shadow.mapSize.height = 4096;
-    light.shadow.camera.near = 0.5;
-    light.shadow.camera.far = 500.0;
-    light.shadow.camera.left = 50;
-    light.shadow.camera.right = -50;
-    light.shadow.camera.top = 50;
-    light.shadow.camera.bottom = -50;
-    this._scene.add(light);
+    // luz fria para el espacio
+    // Luz direccional azul fría, más clara
+    const spaceLight = new THREE.DirectionalLight(0x6f8eff, 0.32);
+    // Antes: color 0x4a70ff, intensidad 0.18
 
-    light = new THREE.AmbientLight(0xFFFFFF, 0.25);
-    this._scene.add(light);
+    spaceLight.position.set(30, 80, -40);
+    spaceLight.target.position.set(0, 0, 0);
+
+    spaceLight.castShadow = true;
+    spaceLight.shadow.bias = -0.0008;
+    spaceLight.shadow.mapSize.width = 2048;
+    spaceLight.shadow.mapSize.height = 2048;
+
+    spaceLight.shadow.camera.near = 1;
+    spaceLight.shadow.camera.far = 400;
+    spaceLight.shadow.camera.left = 80;
+    spaceLight.shadow.camera.right = -80;
+    spaceLight.shadow.camera.top = 80;
+    spaceLight.shadow.camera.bottom = -80;
+
+    this._scene.add(spaceLight);
+
+    // Luz ambiental azul más clara
+    const ambientSpace = new THREE.AmbientLight(0x6b85ff, 0.15);
+    // Antes: color 0x3355aa, intensidad 0.08
+
+    this._scene.add(ambientSpace);
+
+
+
 
     this._mixers = [];
     this._previousRAF = null;
@@ -1781,266 +1794,140 @@ class CharacterControllerDemo {
     this._checkpointHitboxes = []; //colisiones para las metas (ganar el juego)
 
     //carga de modelos FBX con sus hitboxes!
-
-    //entorno
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/moai/moai.fbx', 
-        new THREE.Vector3(-120,6,-120), 
-        new THREE.Vector3(0.06,0.06,0.06)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/moai/moai.fbx', 
-        new THREE.Vector3(120,8,130), 
-        new THREE.Vector3(0.05,0.05,0.05),
-        new THREE.Vector3(0, Math.PI, 0)
-      )
-    );
-
-    //no ocupan colis
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,70,5), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(50,55,-10), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(105,40,105), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-100,55,-115), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(70,50,-85), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-110,65,115), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(5,65,115), new THREE.Vector3(0.05,0.05,0.05));
-    this.LoadSceneModels('./resources/3D/scene/cloudplatform.fbx', new THREE.Vector3(-70,55,0), new THREE.Vector3(0.05,0.05,0.05));
-
     //POSITIVO IZQUIERDA, NEGATIVO DERECHA (basado en como aparece el personaje en escena)
-    //palms
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
-        new THREE.Vector3(-75,8,-4), 
-        new THREE.Vector3(0.03,0.03,0.03)
-      )
-    );
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(-75,8,-4), new THREE.Vector3(0.03,0.03,0.03));
-
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
-        new THREE.Vector3(-40,8,120), 
+    //planetas
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/earth/earth.fbx', 
+        new THREE.Vector3(120,9,-120), 
         new THREE.Vector3(0.05,0.05,0.05)
       )
     );
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(-40,8,120), new THREE.Vector3(0.05,0.05,0.05));
 
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
-        new THREE.Vector3(60,8,110), 
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/lavaplanet/lavaplanet.fbx', 
+        new THREE.Vector3(30,6,-150), 
         new THREE.Vector3(0.05,0.05,0.05)
       )
     );
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(60,8,110), new THREE.Vector3(0.05,0.05,0.05));
 
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
-        new THREE.Vector3(90,8,130), 
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/mars/mars.fbx', 
+        new THREE.Vector3(-150,0,150), 
         new THREE.Vector3(0.05,0.05,0.05)
       )
     );
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(90,8,130), new THREE.Vector3(0.05,0.05,0.05));
 
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/palm/stump.fbx', 
-        new THREE.Vector3(100,8,-125), 
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/pinkplanet/pinkplanet.fbx', 
+        new THREE.Vector3(60,-10,140), 
         new THREE.Vector3(0.05,0.05,0.05)
       )
     );
-    this.LoadSceneModelsWithAlpha('./resources/3D/scene/levelone/palm/leaf.fbx', new THREE.Vector3(100,8,-125), new THREE.Vector3(0.05,0.05,0.05));
 
-    //rock, cave
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/cave/cave.fbx', 
-        new THREE.Vector3(10,36,115), 
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/pinkplanet/pinkplanet.fbx', 
+        new THREE.Vector3(0, 50, 0), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/planets/lavaplanet/lavaplanet.fbx', 
+        new THREE.Vector3(55,12, 50), 
+        new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    //ovnis
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/ovni/ovni.fbx', 
+        new THREE.Vector3(-100,15,-100), 
         new THREE.Vector3(0.05,0.05,0.05),
-        new THREE.Vector3(0, -Math.PI/2, 0)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/cave/cave.fbx', 
-        new THREE.Vector3(90,15,-115), 
-        new THREE.Vector3(0.02,0.02,0.02),
-        new THREE.Vector3(0, -Math.PI/2, 0)
-      )
-    );
-    
-    //dragon esqueleto
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/skeletondragon/skeletondragon.fbx', 
-        new THREE.Vector3(10,8.5,90), 
-        new THREE.Vector3(0.05,0.05,0.05),
-        new THREE.Vector3(0, -Math.PI, 0)
-      )
-    );
-    
-    //cofre
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/chest/chest.fbx', 
-        new THREE.Vector3(10,14,77), 
-        new THREE.Vector3(0.04,0.04,0.04),
-        new THREE.Vector3(0,Math.PI,0)
+        new THREE.Vector3(0, 0, -Math.PI/4)
       )
     );
 
-    //coins
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
-        new THREE.Vector3(10,8.5,75), 
-        new THREE.Vector3(0.04,0.04,0.04)
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/ovni/ovni.fbx', 
+        new THREE.Vector3(100,35,100), 
+        new THREE.Vector3(0.05,0.05,0.05),
+        new THREE.Vector3(-Math.PI/4, 0, 0)
       )
     );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
-        new THREE.Vector3(-10,8.5,80), 
-        new THREE.Vector3(0.04,0.04,0.04)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/coins/coins.fbx', 
-        new THREE.Vector3(80,8.5,120), 
-        new THREE.Vector3(0.04,0.04,0.04)
-      )
-    );
-    //tentaculos
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
-        new THREE.Vector3(70,40,-50), 
-        new THREE.Vector3(0.06,0.06,0.06),  
-        new THREE.Vector3(0, Math.PI/2, 0)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
-        new THREE.Vector3(-75,20,50), 
-        new THREE.Vector3(0.04,0.04,0.04),  
+
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/ovni/ovni.fbx', 
+        new THREE.Vector3(140,25,-140), 
+        new THREE.Vector3(0.05,0.05,0.05),
         new THREE.Vector3(Math.PI/4, 0, 0)
       )
     );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
-        new THREE.Vector3(80,40,50), 
-        new THREE.Vector3(0.06,0.06,0.06),  
-        new THREE.Vector3(0, Math.PI, 0)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/tentacles/tentacles.fbx', 
-        new THREE.Vector3(-50,45,-50), 
-        new THREE.Vector3(0.07,0.07,0.07),  
-        new THREE.Vector3(0, Math.PI, 0)
+
+    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/ovni/ovni.fbx', 
+        new THREE.Vector3(-100,70,80), 
+        new THREE.Vector3(0.05,0.05,0.05),
+        new THREE.Vector3(Math.PI/4, 0, 0)
       )
     );
 
-    //barcos
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/pirateship/pirateship.fbx', 
-      new THREE.Vector3(55,-3,5), 
-      new THREE.Vector3(0.05,0.05,0.05), 
-      new THREE.Vector3(20 * Math.PI / 180, Math.PI/2, 0)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/pirateship/pirateship.fbx', 
-      new THREE.Vector3(-15,0,-20), 
-      new THREE.Vector3(0.05,0.05,0.05), 
-      new THREE.Vector3(0, -Math.PI/2, 0)
-      )
-    );
-
-    //plataformas
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(0,10,-80), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(40,15,-80), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(40,20,-40), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(20,25, 0), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    //question box aqui
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(0,30, 40), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(-40,35, 40), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(-80,40, 40), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(-80,45, 0), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(-40,50, 0), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(0,55, 0), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(40,60, 0), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/woodplatform/woodplatform.fbx', 
-      new THREE.Vector3(20,65, 40), 
+    // //plataformas
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(0,35,70), 
       new THREE.Vector3(0.05,0.05,0.05)
       )
     );
 
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(80,52,70), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(80,69,-10), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(80,86,-80), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(30,103,-30), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    this._platformsHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelthree/splatform/splatform.fbx', 
+      new THREE.Vector3(30,120,-100), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+
+    
     // bandera de meta
     // en la punta del mapa
     this._checkpointHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/checkpoint/checkpoint.fbx', 
-      new THREE.Vector3(20,67, 40), 
+      new THREE.Vector3(30,120,-100), 
       new THREE.Vector3(0.05,0.05,0.05)
       )
     );
-    this._checkpointHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/checkpoint/checkpoint.fbx', 
-      new THREE.Vector3(120,13,140), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-
-    //barriles
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
-      new THREE.Vector3(-50,9,-115), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
-      new THREE.Vector3(-75,8,-15), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._leveloneHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/barrels/barrels.fbx', 
-      new THREE.Vector3(105,10,120), 
-      new THREE.Vector3(0.07,0.07,0.07)
-      )
-    );
-
+    
     //question box
+    // //inicio
     this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
-      new THREE.Vector3(-90,24,-110), 
+      new THREE.Vector3(-0, 35, 0), 
+      new THREE.Vector3(0.05,0.05,0.05)
+      )
+    );
+    // //plataformas
+    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
+      new THREE.Vector3(80,89,-10), 
       new THREE.Vector3(0.05,0.05,0.05)
       )
     );
     this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
-      new THREE.Vector3(0,44, 40), 
+      new THREE.Vector3(80,72,70), 
       new THREE.Vector3(0.05,0.05,0.05)
       )
     );
+    //cerca del agua
     this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
-      new THREE.Vector3(-90,24,115), 
-      new THREE.Vector3(0.05,0.05,0.05)
-      )
-    );
-    this._qboxHitboxes.push(this.LoadSceneModelsWithPrecision('./resources/3D/scene/levelone/questionbox/questionbox.fbx', 
-      new THREE.Vector3(115,24,-115), 
+      new THREE.Vector3(-100,20,-100), 
       new THREE.Vector3(0.05,0.05,0.05)
       )
     );
@@ -2200,7 +2087,8 @@ class CharacterControllerDemo {
         });
 
         // ⭐ CORRECCIÓN: Establecer posición inicial antes de añadir a la escena
-        fbx.position.set(-105, 0, -115); // Posición de spawn inicial
+        fbx.position.set(-0, 0, 0); // Posición de spawn inicial
+        // -95, startHeight + 0.5, 90
         
         // ⭐ CORRECCIÓN: Añadir a la escena y guardar referencia
         this._scene.add(fbx);
@@ -2251,7 +2139,7 @@ class CharacterControllerDemo {
 
   // Cargar heightmap
   console.log("⏳ Cargando heightmap...");
-  const heightMap = await this._LoadTextureAsync(textureLoader, './resources/textures/levelone.jpg');
+  const heightMap = await this._LoadTextureAsync(textureLoader, './resources/textures/levelthree.jpg');
 
   if (!heightMap || !heightMap.image) {
     console.warn("⚠️ Heightmap no cargó, usando terreno plano");
@@ -2286,8 +2174,8 @@ class CharacterControllerDemo {
   // Cargar texturas
   console.log("⏳ Cargando texturas de material...");
   const [grassTexture, rockTexture] = await Promise.all([
-    this._LoadTextureAsync(textureLoader, './resources/textures/sand.png'),
-    this._LoadTextureAsync(textureLoader, './resources/textures/sand.png')
+    this._LoadTextureAsync(textureLoader, './resources/textures/mars.png'),
+    this._LoadTextureAsync(textureLoader, './resources/textures/mars.png')
   ]);
 
   if (grassTexture) {
@@ -2449,7 +2337,7 @@ class CharacterControllerDemo {
 
     // Crear objeto de agua
     this._water = new Water(waterGeometry, {
-        color: '#1e90ff',
+        color: 'rgba(12, 13, 24, 1)',
         scale: 10,
         flowDirection: new THREE.Vector2(1, 0.5),
         textureWidth: 2048,
@@ -2460,29 +2348,42 @@ class CharacterControllerDemo {
 
     // Posicionar el agua
     this._water.rotation.x = -Math.PI / 2;
-    this._water.position.y = 5;
+    this._water.position.y = 1;
 
     // Configurar transparencia
-    this._water.material.transparent = true;
-    this._water.material.uniforms.config.value.w = 0.6;
-    this._water.material.uniforms.color.value.setRGB(0.12, 0.56, 1.0);
-    this._water.material.blending = THREE.NormalBlending;
+    // this._water.material.transparent = true;
+    // this._water.material.uniforms.config.value.w = 0.6;
+    // this._water.material.uniforms.color.value.setRGB(0.12, 0.56, 1.0);
+    // this._water.material.blending = THREE.NormalBlending;
+    // this._water.material.side = THREE.DoubleSide;
+    // Agua completamente negra
+    this._water.material.transparent = false;
+    this._water.material.uniforms.config.value.w = 1.0; // Sin transparencia
+    this._water.material.uniforms.color.value.setRGB(0, 0, 0); // Negro total
+    this._water.material.blending = THREE.NoBlending;
     this._water.material.side = THREE.DoubleSide;
+
 
     this._scene.add(this._water);
     
-    // 🎯 COLISIÓN: Crear BoundingBox para detección
+   // 🎯 COLISIÓN: Crear BoundingBox para detección
     const waterThickness = 0.5; // Grosor de la zona de colisión
     this._waterBoundingBox = new THREE.Box3(
-        new THREE.Vector3(-150, 5 - waterThickness, -150), // min
-        new THREE.Vector3(150, 5 + waterThickness, 150)    // max
+        new THREE.Vector3(-150, 1 - waterThickness, -150), // min (cambio: 5 → 1)
+        new THREE.Vector3(150, 1 + waterThickness, 150)    // max (cambio: 5 → 1)
     );
-    
+
     // Guardar altura del agua para efectos adicionales
-    this._waterLevel = 5;
+    this._waterLevel = 1; // ⭐ Cambio: 5 → 1
+
+    // 👁️ VISUALIZACIÓN: Helper para ver la colisión (DEBUG)
+    const waterBoxHelper = new THREE.Box3Helper(this._waterBoundingBox, 0x00ffff);
+    waterBoxHelper.name = 'WaterCollisionHelper';
+    // this._scene.add(waterBoxHelper);
+
     
     console.log("✅ Agua creada con colisión");
-}
+    }
 
 _InstantiateModel(path, position, scale, rotation = new THREE.Vector3(0, 0, 0), usePreciseCollision = false) {
     const instance = this._modelTemplates[path].clone();

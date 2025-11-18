@@ -160,11 +160,11 @@
                                             <div class="create-wrapper">
                                             </div>
                                             <div class="create-g uno">
-                                                <p>Host Lobby</p>
+                                                <p>Join Lobby</p>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="gms-join sfx-btn" id="join-lob"> <!-- join sala -->
+                                    <div class="gms-join sfx-btn" id="join-lob" style="display: none;"> <!-- join sala -->
                                         <div class="gmsc-bg dos">
                                             <img src="resources/img/gamepad.png" alt="gamepad" id="imggp">
                                             <div class="create-i">
@@ -230,7 +230,7 @@
                                         </div>
                                         <div class="gmc-gamemode" id="level-dif">
                                                 <div class="arrow sfx-btn-click" id="ld-prev"><i class="fa-solid fa-caret-left"></i></div>
-                                                <div class="gmc-display" id="ld-display">EASY</div>
+                                                <div class="gmc-display" id="ld-display">NORMAL</div>
                                                 <div class="arrow sfx-btn-click" id="ld-next"><i class="fa-solid fa-caret-right"></i></div>
                                             </div>
                                     </div>
@@ -247,8 +247,8 @@
                                             <div class="lc-code">
                                                 <div class="lc-code-top uno"></div>
                                                 <img src="resources/img/8.png" alt="cinta" class="cintita dos">
-                                                <p>#Room Code:</p>
-                                                <input type="text" value="#RYOFG">
+                                                <p>#Player:</p>
+                                                <input type="text" readonly class="player-ls">
                                             </div>
                                             <div class="lc-code">
                                                 <div class="lc-code-top dos"></div>
@@ -416,7 +416,8 @@
                                 <button id="music-btn" class="sfx-btn"><i class="material-symbols-outlined">music_note</i></button>
                                 <button id="volume-btn" class="sfx-btn"><i class="fa-solid fa-volume-high"></i></button>
                             </div>
-                            <div class="gmc-gamemode" id="gamemode-gmc">
+                            <!-- ocultado -->
+                            <div class="gmc-gamemode" id="gamemode-gmc" style="display: none;">
                                 <div class="arrow sfx-btn-click" id="prev"><i class="fa-solid fa-caret-left"></i></div>
                                 <div class="gmc-display" id="gm-dif">EASY</div>
                                 <div class="arrow sfx-btn-click" id="next"><i class="fa-solid fa-caret-right"></i></div>
