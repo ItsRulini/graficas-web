@@ -147,6 +147,13 @@ export class Menu {
 		//Entrar al juego
 		this.PlayGame = document.getElementById('pGame');
 
+		// para redirigir
+		this.levelURLs = [
+			"SCENE.html",      // Nivel 1
+			"leveltwo.html",     // Nivel 2
+			"levelthree.html"      // Nivel 3
+		];
+
 		// Abrir opciones para crear sala o unirse
 		this.startGame = document.getElementById('gmo-start');
 
@@ -184,6 +191,15 @@ export class Menu {
 
 		// Nombre de usuario
 		this.username = document.getElementById("username");
+		this.userName = localStorage.getItem('userName');
+		this.usertojoin = document.querySelector(".player-ls");
+
+		//usuario
+		if (this.userName) {
+			this.usertojoin.value = this.userName;
+		}
+
+
 		// Definir colores
 		this.colors = {
 			white: "white",
@@ -232,16 +248,16 @@ export class Menu {
 		this.currentLevelIndex = 0;
 
 		this.levelData = [
-			{ name: "Level Name One", desc: "First scenary description." },
-			{ name: "Level Name Two", desc: "Second scenary description." },
-			{ name: "Level Name Three", desc: "Third scenary description." }
+			{ name: "Level One", desc: "Ahoy! You ready for some pirate parkour, argh!" },
+			{ name: "Level Two", desc: "Jump over the volcano, careful!" },
+			{ name: "Level Three", desc: "Third scenary description." }
 		];
 
 		this.levelName = document.getElementById("level-name");
 		this.levelDesc = document.getElementById("level-desc");
 
 		//dificultad del nivel
-		this.difficulties = ["EASY", "MEDIUM", "HARD"];
+		this.difficulties = ["NORMAL", "CHAOS"];
 		this.difficultyIndex = 0;
 		this.difficultyDisplay = document.getElementById("ld-display");
 
@@ -276,8 +292,27 @@ export class Menu {
 	bindEvents() {
 
 		// // Iniciar juego
+		// this.PlayGame.addEventListener("click", () => {
+		// 	window.location.href = "SCENE.html";
+		// });
+
 		this.PlayGame.addEventListener("click", () => {
-			window.location.href = "SCENE.html";
+			// Obtener el nivel seleccionado actual
+			const selectedLevel = this.currentLevelIndex;
+			
+			// Guardar el nivel seleccionado en localStorage
+			localStorage.setItem("selectedLevel", selectedLevel);
+			
+			// Guardar la dificultad seleccionada
+			localStorage.setItem("selectedDifficulty", this.difficulties[this.difficultyIndex]);
+			
+			// Obtener la URL correspondiente al nivel
+			const levelURL = this.levelURLs[selectedLevel];
+			
+			console.log(`🎮 Iniciando nivel ${selectedLevel + 1} - Dificultad: ${this.difficulties[this.difficultyIndex]}`);
+			
+			// Redirigir al nivel seleccionado
+			window.location.href = levelURL;
 		});
 
 		// Cerrar sesión
@@ -454,7 +489,7 @@ export class Menu {
 		// Texto de los créditos
 		this.raul.addEventListener("click", () => {
 			if (this.toggledR) {
-				this.raul.innerHTML = "Raúl Alejandro <br> García Gámez";
+				this.raul.innerHTML = "Raul Alejandro <br> Garcia Gamez";
 			} else {
 				this.raul.textContent = "2049564";
 			}
@@ -463,7 +498,7 @@ export class Menu {
 
 		this.danna.addEventListener("click", () => {
 			if (this.toggledD) {
-				this.danna.innerHTML = "Danna Paola <br> Hernández Rodríguez";
+				this.danna.innerHTML = "Danna Paola <br> Hernandez Rodriguez";
 			} else {
 				this.danna.textContent = "2076454";
 			}
@@ -472,7 +507,7 @@ export class Menu {
 
 		this.alberto.addEventListener("click", () => {
 			if (this.toggleda) {
-				this.alberto.innerHTML = "Alberto Jesús <br> Alvarado Garza";
+				this.alberto.innerHTML = "Alberto Jesus <br> Alvarado Garza";
 			} else {
 				this.alberto.textContent = "1847862";
 			}

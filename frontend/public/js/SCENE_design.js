@@ -17,6 +17,22 @@ export class _Scene{
 
         this.messagelosewin = document.querySelector(".wl-display");
         this.messagelw_close = document.querySelector(".gmwl-close");
+
+        this.lsPLAYER = localStorage.getItem("selectedPLY");
+        this.userName = localStorage.getItem('userName');
+
+        //Colocar imagen y usuario acorde
+        const avatarImg = document.querySelector(".gmdps-useravatar");
+        if (this.lsPLAYER) {
+            avatarImg.src = this.lsPLAYER;
+            avatarImg.alt = "player";
+        }
+
+        //usuario
+        const userNameEl = document.querySelector(".gmdps-username");
+        if (this.userName) {
+            userNameEl.textContent = this.userName;
+        }
     }
     bindEvents(){
         //Abrir menu de pausa con tecla "p"
@@ -41,6 +57,7 @@ export class _Scene{
         this.messagelw_close.addEventListener('click', () => {
             this.messagelosewin.style.display = 'none';
         });
+        
     }
     togglePauseMenu(open){
         if (open) {
